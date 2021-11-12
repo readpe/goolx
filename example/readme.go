@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/olxapi"
+	"github.com/readpe/goolx/internal/olxapi"
 )
 
 func main() {

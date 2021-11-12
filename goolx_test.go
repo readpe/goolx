@@ -10,7 +10,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/readpe/goolx/olxapi"
+	"github.com/readpe/goolx/internal/olxapi"
 )
 
 func TestInfo(t *testing.T) {

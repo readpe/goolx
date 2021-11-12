@@ -4,7 +4,7 @@
 
 package goolx
 
-import "github.com/readpe/goolx/olxapi"
+import "github.com/readpe/goolx/internal/olxapi"
 
 // Bus represents a bus equipment data structure. This does not represent all fields from
 // ASPEN model, future fields may be added as needed.

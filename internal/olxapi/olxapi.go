@@ -3,8 +3,8 @@
 // license that can be found in the LICENSE file.
 
 // olxapi.dll is a win32 application, build constrained to 386 GOARCH
-// +build windows
-// +build 386
+//go:build windows && 386
+// +build windows,386
 
 package olxapi
 
@@ -18,6 +18,7 @@ import (
 
 // OlxAPIDLLPath is the full path to the directory containing the olxapi.dll.
 // default is `C:\Programs Files (x86)\ASPEN\1LPFv14\OlxAPI`
+// override if location is different.
 var OlxAPIDLLPath = `C:\Programs Files (x86)\ASPEN\1LPFv14\OlxAPI`
 
 // OlxAPI represents a connection to the olxapi.dll. Provides method

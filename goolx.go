@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/readpe/goolx/olxapi"
+	"github.com/readpe/goolx/internal/olxapi"
 )
 
 // Byte size constants
