@@ -25,7 +25,7 @@ func utf8NullFromString(s string) ([]byte, error) {
 
 // utf8NullToString returns the UTF-8 encoding of the UTF-8 sequence s,
 // with a terminating NUL removed.
-func utf8NullToString(s []byte) string {
+func UTF8NullToString(s []byte) string {
 	for i, v := range s {
 		if v == 0 {
 			s = s[0:i]

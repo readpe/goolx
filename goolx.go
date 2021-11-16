@@ -214,7 +214,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 			return nil, err
 		}
 
-		s := uTF8NullToString(buf)
+		s := olxapi.UTF8NullToString(buf)
 		return s, nil
 
 	case olxapi.VTDOUBLE:
