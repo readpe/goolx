@@ -10,6 +10,7 @@ package olxapi
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 	"syscall"
@@ -44,6 +45,7 @@ type OlxAPI struct {
 	getEquipmentByTag *syscall.Proc
 	findBusNo         *syscall.Proc
 	setData           *syscall.Proc
+	getBusEquipment   *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -79,6 +81,7 @@ func New() *OlxAPI {
 	api.getEquipmentByTag = api.dll.MustFindProc("OlxAPIFindEquipmentByTag")
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
 	api.setData = api.dll.MustFindProc("OlxAPISetData")
+	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
 
 	return api
 }
@@ -168,13 +171,16 @@ func (o *OlxAPI) ReadChangeFile(name string) error {
 
 // GetEquipment calls the OlxAPIGetEquipment function. Returns
 // the equipment handle. Returns an error if OLXAPIFailure
-// is returned.
+// is returned. Returns io.EOF error when iteration is exhausted.
 func (o *OlxAPI) GetEquipment(eqType int, hnd *int) error {
 	o.Lock()
 	r, _, _ := o.getEquipment.Call(uintptr(eqType), uintptr(unsafe.Pointer(&hnd)))
 	o.Unlock()
-	// OlxAPI returns -1 when GetEquipment is exhausted, can't compare to OLXAPIFailure
-	if r != OLXAPIOk {
+	switch int(r) {
+	case -1:
+		// OlxAPI returns -1 when GetEquipment is exhausted, returning EOF error.
+		return io.EOF
+	case OLXAPIFailure:
 		return ErrOlxAPI{"GetEquipment", o.ErrorString()}
 	}
 	return nil
@@ -268,6 +274,23 @@ func (o *OlxAPI) SetDataFloat64(hnd, token, data float64) error {
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return ErrOlxAPI{"SetDataInt", o.ErrorString()}
+	}
+	return nil
+}
+
+// GetBusEquipment returns the handle of the next equipment attached to the provided bus handle,
+// of the specified type. Returns io.EOF error when iteration is exhausted.
+func (o *OlxAPI) GetBusEquipment(busHnd, eqType int, hnd *int) error {
+	o.Lock()
+	r, _, _ := o.getBusEquipment.Call(uintptr(busHnd), uintptr(eqType), uintptr(unsafe.Pointer(hnd)))
+	o.Unlock()
+
+	switch int(r) {
+	case -1:
+		// OlxAPI returns -1 when GetBusEquipment is exhausted, returning EOF error.
+		return io.EOF
+	case OLXAPIFailure:
+		return ErrOlxAPI{"GetBusEquipment", o.ErrorString()}
 	}
 	return nil
 }

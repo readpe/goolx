@@ -4,6 +4,8 @@
 
 package goolx
 
+import "io"
+
 // HandleIterator is a iterator interface for equipment handles.
 type HandleIterator interface {
 	Next() bool
@@ -19,6 +21,7 @@ type NextEquipment struct {
 	c      *Client
 	eqType int
 	hnd    int
+	done   bool
 	err    error
 }
 
@@ -26,13 +29,17 @@ type NextEquipment struct {
 // true if successful, and false if not. Hnd() should not be used
 // if Next() is false. This can be used in for loops.
 func (n *NextEquipment) Next() bool {
-	if n.err != nil {
+	if n.done {
 		return false
 	}
 	err := n.c.olxAPI.GetEquipment(n.eqType, &n.hnd)
 	if err != nil {
-		n.hnd, n.err = 0, err
-		return false
+		n.done = true
+		if err == io.EOF {
+			// EOF is not an error, so don't set n.err = err.
+			return false
+		}
+		n.err = err
 	}
 	return true
 }
