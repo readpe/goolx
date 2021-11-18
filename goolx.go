@@ -206,7 +206,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 	switch token / 100 {
 
-	case olxapi.VTSTRING:
+	case VTSTRING:
 		// string
 		buf := make([]byte, 10*KiB) // 10 KiB buffer for string data null terminated
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -217,7 +217,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		s := olxapi.UTF8NullToString(buf)
 		return s, nil
 
-	case olxapi.VTDOUBLE:
+	case VTDOUBLE:
 		// double
 		buf := make([]byte, 8) // 64 bit (8 byte) float64 buffer, equivalent to C Double
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -228,7 +228,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		f := math.Float64frombits(binary.LittleEndian.Uint64(buf))
 		return f, nil
 
-	case olxapi.VTINTEGER:
+	case VTINTEGER:
 		// integers
 		buf := make([]byte, 4) // 32 bit (4 byte) int32 buffer
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -240,7 +240,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 		return i, nil
 
-	case olxapi.VTARRAYSTRING:
+	case VTARRAYSTRING:
 		// string array
 		buf := make([]byte, 10*KiB) // 10 KiB buffer
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -253,11 +253,11 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 		return sa, nil
 
-	case olxapi.VTARRAYINT:
+	case VTARRAYINT:
 		// array length depends on token
 		var length int
 
-		length, ok := olxapi.ArrayLengths[eqType][token]
+		length, ok := ArrayLengths[eqType][token]
 		if !ok {
 			return nil, fmt.Errorf("array length not found for equipment type: %v; token: %v", eqType, token)
 		}
@@ -277,11 +277,11 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		// returning []int
 		return data, nil
 
-	case olxapi.VTARRAYDOUBLE:
+	case VTARRAYDOUBLE:
 		// array length depends on token
 		var length int
 
-		length, ok := olxapi.ArrayLengths[eqType][token]
+		length, ok := ArrayLengths[eqType][token]
 		if !ok {
 			return nil, fmt.Errorf("array length not found for equipment type: %v; token: %v", eqType, token)
 		}

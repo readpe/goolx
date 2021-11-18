@@ -4,8 +4,6 @@
 
 package goolx
 
-import "github.com/readpe/goolx/internal/olxapi"
-
 // Bus represents a bus equipment data structure. This does not represent all fields from
 // ASPEN model, future fields may be added as needed.
 type Bus struct {
@@ -23,13 +21,13 @@ type Bus struct {
 // Scanned into a new bus object and returned if no errors.
 func GetBus(c *Client, hnd int) (*Bus, error) {
 	data := c.GetData(hnd,
-		olxapi.BUSsName,
-		olxapi.BUSdKVnominal,
-		olxapi.BUSnNumber,
-		olxapi.BUSnArea,
-		olxapi.BUSnZone,
-		olxapi.BUSnTapBus,
-		olxapi.BUSsComment,
+		BUSsName,
+		BUSdKVnominal,
+		BUSnNumber,
+		BUSnArea,
+		BUSnZone,
+		BUSnTapBus,
+		BUSsComment,
 	)
 
 	// Scan data into bus instance. Similar to sql.Rows.Scan

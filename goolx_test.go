@@ -9,8 +9,6 @@ import (
 	"os"
 	"path"
 	"testing"
-
-	"github.com/readpe/goolx/internal/olxapi"
 )
 
 func TestInfo(t *testing.T) {
@@ -103,7 +101,7 @@ func TestReadChangeFile(t *testing.T) {
 func TestNextEquipment(t *testing.T) {
 	c := NewClient()
 	defer c.Release()
-	hi := c.NextEquipment(olxapi.TCBus)
+	hi := c.NextEquipment(TCBus)
 	for hi.Next() {
 		hnd := hi.Hnd()
 		if hnd <= 0 {
@@ -115,7 +113,7 @@ func TestNextEquipment(t *testing.T) {
 func TestFindEquipmentByTag(t *testing.T) {
 	c := NewClient()
 	defer c.Release()
-	hi := c.NextEquipmentByTag(olxapi.TCBus, "Tag1", "Tag2", "Tag3")
+	hi := c.NextEquipmentByTag(TCBus, "Tag1", "Tag2", "Tag3")
 	for hi.Next() {
 		hnd := hi.Hnd()
 		if hnd <= 0 {
@@ -129,7 +127,7 @@ func TestFindEquipmentByTag(t *testing.T) {
 func ExampleData_Scan() {
 	var busHnd int
 	api := NewClient()
-	data := api.GetData(busHnd, olxapi.BUSsName, olxapi.BUSdKVP)
+	data := api.GetData(busHnd, BUSsName, BUSdKVP)
 
 	// Scan loads the data into the pointers provided populating the Bus structure in this example.
 	bus := Bus{}

@@ -9,7 +9,6 @@ import (
 	"log"
 
 	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/internal/olxapi"
 )
 
 func main() {
@@ -27,7 +26,7 @@ func main() {
 	}
 
 	// Loop through all buses in case using NextEquipment iterator.
-	buses := c.NextEquipment(olxapi.TCBus)
+	buses := c.NextEquipment(goolx.TCBus)
 	for buses.Next() {
 		hnd := buses.Hnd()
 

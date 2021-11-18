@@ -17,6 +17,12 @@ import (
 	"unsafe"
 )
 
+// OlxAPI return codes.
+const (
+	OLXAPIFailure = 0
+	OLXAPIOk      = 1
+)
+
 // OlxAPIDLLPath is the full path to the directory containing the olxapi.dll.
 // default is `C:\Programs Files (x86)\ASPEN\1LPFv14\OlxAPI`
 // override if location is different.
