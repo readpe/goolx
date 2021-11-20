@@ -116,6 +116,7 @@ func withOutage(f faultConfig, outageList []int, otgOpt OutageOption) faultConfi
 	}
 
 	return func(fc *FaultConfig) {
+		f(fc) // Call wrapped faultConfig function first.
 		fc.outageList = outageList
 		fc.outageOpt = outageOptions
 	}
