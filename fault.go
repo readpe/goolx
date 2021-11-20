@@ -4,6 +4,8 @@
 
 package goolx
 
+// faultConn represents a fault connection for use with the DoFault procedure.
+// The index and code are specified in ASPEN Oneliner documentation.
 type faultConn struct {
 	idx  int
 	code int
@@ -17,6 +19,7 @@ var (
 	AB  = faultConn{idx: 3, code: 1}
 )
 
+// OutageOption represents a the method outages are applied with use in the DoFault procedure.
 type OutageOption int
 
 const (
@@ -26,6 +29,9 @@ const (
 	OutageOptionBF            // Breaker failure
 )
 
+// FaultConfig represents configuration parameters required to run the Oneliner DoFault procedure.
+// Options are configured by passing one or more of the faultConfig functions provided into the
+// NewFaultConfig function.
 type FaultConfig struct {
 	fltConn    [4]int
 	fltOpt     [15]float64
@@ -36,29 +42,37 @@ type FaultConfig struct {
 	clearPrev  bool
 }
 
+// Apply will apply the provided faultConfig functions to the existing config.
 func (cfg *FaultConfig) Apply(configs ...faultConfig) {
 	for _, f := range configs {
 		f(cfg)
 	}
 }
 
+// NewFaultConfig returns a pointer to a new instance of FaultConfig for use with the Oneliner
+// DoFault procedure. Provide faultConfig functions to modify the underlying parameters.
 func NewFaultConfig(configs ...faultConfig) *FaultConfig {
 	fc := &FaultConfig{}
 	fc.Apply(configs...)
 	return fc
 }
 
+// New3LGFaultConfig is a helper function to return a new 3LG FaultConfig instance. See NewFaultConfig for
+// more specifics.
 func New3LGFaultConfig() *FaultConfig {
 	return NewFaultConfig(FaultConn(ABC))
 }
 
+// New1LGFaultConfig is a helper function to return a new 1LG FaultConfig instance. See NewFaultConfig for
+// more specifics.
 func New1LGFaultConfig() *FaultConfig {
 	return NewFaultConfig(FaultConn(AG))
 }
 
+// faultConfig represents configuration modification functions to apply to the FaultConfig data.
 type faultConfig func(*FaultConfig)
 
-// FaultRX sets the fault impedance.
+// FaultRX sets the fault impedance in Ohms.
 func FaultRX(r, x float64) faultConfig {
 	return func(fc *FaultConfig) {
 		fc.fltR = r
@@ -107,22 +121,28 @@ func withOutage(f faultConfig, outageList []int, otgOpt OutageOption) faultConfi
 	}
 }
 
+// FaultCloseIn applies a close-in fault.
 func FaultCloseIn() faultConfig {
 	return func(fc *FaultConfig) {
 		fc.fltOpt[0] = 1
 	}
 }
 
+// FaultCloseInWithOutage applies a close-in fault with outages on the system. An outage list and options are required.
 func FaultCloseInWithOutage(outageList []int, otgOpt OutageOption) faultConfig {
 	return withOutage(FaultCloseIn(), outageList, otgOpt)
 }
 
+// FaultCloseInWithEndOpen applies a close-in fault with the end open as determined by the Oneliner algorithm for determining the
+// end of the line.
 func FaultCloseInWithEndOpen() faultConfig {
 	return func(fc *FaultConfig) {
 		fc.fltOpt[2] = 1
 	}
 }
 
+// FaultCloseInWithEndOpenWithOutage applies a close-in fault with outages and the end open as determined by the Oneliner algorithm for determining the
+// end of the line. An outage list and options are required.
 func FaultCloseInWithEndOpenWithOutage(outageList []int, otgOpt OutageOption) faultConfig {
 	return withOutage(FaultCloseInWithEndOpen(), outageList, otgOpt)
 }
