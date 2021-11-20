@@ -4,7 +4,7 @@
 
 package goolx
 
-// faultConn represents a fault connection for use with the DoFault procedure.
+// FaultConn represents a fault connection for use with the DoFault procedure.
 // The index and code are specified in ASPEN Oneliner documentation.
 type faultConn struct {
 	idx  int
@@ -23,14 +23,14 @@ var (
 type OutageOption int
 
 const (
-	OutageOptionOnePer = iota // One at a time
-	OutageOptionTwoPer        // Two at a time
-	OutageOptionAll           // All at once
-	OutageOptionBF            // Breaker failure
+	OutageOptionOnePer OutageOption = iota // One at a time
+	OutageOptionTwoPer                     // Two at a time
+	OutageOptionAll                        // All at once
+	OutageOptionBF                         // Breaker failure
 )
 
 // FaultConfig represents configuration parameters required to run the Oneliner DoFault procedure.
-// Options are configured by passing one or more of the faultConfig functions provided into the
+// Options are configured by passing one or more of the FaultOption functions provided into the
 // NewFaultConfig function.
 type FaultConfig struct {
 	fltConn    [4]int
@@ -42,18 +42,18 @@ type FaultConfig struct {
 	clearPrev  bool
 }
 
-// Apply will apply the provided faultConfig functions to the existing config.
-func (cfg *FaultConfig) Apply(configs ...faultConfig) {
-	for _, f := range configs {
+// Apply will apply the provided FaultOption functions to the existing config.
+func (cfg *FaultConfig) Apply(options ...FaultOption) {
+	for _, f := range options {
 		f(cfg)
 	}
 }
 
 // NewFaultConfig returns a pointer to a new instance of FaultConfig for use with the Oneliner
-// DoFault procedure. Provide faultConfig functions to modify the underlying parameters.
-func NewFaultConfig(configs ...faultConfig) *FaultConfig {
+// DoFault procedure. Provide FaultOption functions to modify the underlying parameters.
+func NewFaultConfig(options ...FaultOption) *FaultConfig {
 	fc := &FaultConfig{}
-	fc.Apply(configs...)
+	fc.Apply(options...)
 	return fc
 }
 
@@ -69,11 +69,11 @@ func New1LGFaultConfig() *FaultConfig {
 	return NewFaultConfig(FaultConn(AG))
 }
 
-// faultConfig represents configuration modification functions to apply to the FaultConfig data.
-type faultConfig func(*FaultConfig)
+// FaultOption represents configuration modification functions to apply to the FaultConfig data.
+type FaultOption func(*FaultConfig)
 
 // FaultRX sets the fault impedance in Ohms.
-func FaultRX(r, x float64) faultConfig {
+func FaultRX(r, x float64) FaultOption {
 	return func(fc *FaultConfig) {
 		fc.fltR = r
 		fc.fltX = x
@@ -82,14 +82,14 @@ func FaultRX(r, x float64) faultConfig {
 
 // FaultClearPrev sets the clear previous flag. True will clear the
 // previous fault results.
-func FaultClearPrev(e bool) faultConfig {
+func FaultClearPrev(e bool) FaultOption {
 	return func(fc *FaultConfig) {
 		fc.clearPrev = e
 	}
 }
 
 // FaultConn applies the provided fault connections. Overrides the previous fault connections.
-func FaultConn(conn ...faultConn) faultConfig {
+func FaultConn(conn ...faultConn) FaultOption {
 	var fltConn [4]int
 	for _, c := range conn {
 		fltConn[c.idx] = c.code
@@ -100,8 +100,8 @@ func FaultConn(conn ...faultConn) faultConfig {
 }
 
 // withOutage is a middleware function to apply outage configuration options to an existing
-// faultConfig function.
-func withOutage(f faultConfig, outageList []int, otgOpt OutageOption) faultConfig {
+// FaultOption function.
+func withOutage(f FaultOption, outageList []int, otgOpt OutageOption) FaultOption {
 	// Set the outage options array.
 	var outageOptions [4]int
 	switch otgOpt {
@@ -116,34 +116,103 @@ func withOutage(f faultConfig, outageList []int, otgOpt OutageOption) faultConfi
 	}
 
 	return func(fc *FaultConfig) {
-		f(fc) // Call wrapped faultConfig function first.
+		f(fc) // Call wrapped FaultOption function first.
 		fc.outageList = outageList
 		fc.outageOpt = outageOptions
 	}
 }
 
 // FaultCloseIn applies a close-in fault.
-func FaultCloseIn() faultConfig {
+func FaultCloseIn() FaultOption {
 	return func(fc *FaultConfig) {
 		fc.fltOpt[0] = 1
 	}
 }
 
-// FaultCloseInWithOutage applies a close-in fault with outages on the system. An outage list and options are required.
-func FaultCloseInWithOutage(outageList []int, otgOpt OutageOption) faultConfig {
-	return withOutage(FaultCloseIn(), outageList, otgOpt)
+// FaultCloseInOutage applies a close-in fault with outages on the system. An outage list and options are required.
+func FaultCloseInOutage(outageList []int, otgOpt OutageOption) FaultOption {
+	return withOutage(func(fc *FaultConfig) {
+		fc.fltOpt[1] = 1
+	}, outageList, otgOpt)
 }
 
-// FaultCloseInWithEndOpen applies a close-in fault with the end open as determined by the Oneliner algorithm for determining the
+// FaultCloseInEndOpen applies a close-in fault with the end open as determined by the Oneliner algorithm for determining the
 // end of the line.
-func FaultCloseInWithEndOpen() faultConfig {
+func FaultCloseInEndOpen() FaultOption {
 	return func(fc *FaultConfig) {
 		fc.fltOpt[2] = 1
 	}
 }
 
-// FaultCloseInWithEndOpenWithOutage applies a close-in fault with outages and the end open as determined by the Oneliner algorithm for determining the
+// FaultCloseInEndOpenOutage applies a close-in fault with outages and the end open as determined by the Oneliner algorithm for determining the
 // end of the line. An outage list and options are required.
-func FaultCloseInWithEndOpenWithOutage(outageList []int, otgOpt OutageOption) faultConfig {
-	return withOutage(FaultCloseInWithEndOpen(), outageList, otgOpt)
+func FaultCloseInEndOpenOutage(outageList []int, otgOpt OutageOption) FaultOption {
+	return withOutage(func(fc *FaultConfig) {
+		fc.fltOpt[3] = 1
+	}, outageList, otgOpt)
+}
+
+// FaultRemoteBus applies a remote bus fault.
+func FaultRemoteBus() FaultOption {
+	return func(fc *FaultConfig) {
+		fc.fltOpt[4] = 1
+	}
+}
+
+// FaultRemoteBusOutage applies a remote bus fault with outages. An outage list and options are required.
+func FaultRemoteBusOutage(outageList []int, otgOpt OutageOption) FaultOption {
+	return withOutage(func(fc *FaultConfig) {
+		fc.fltOpt[5] = 1
+	}, outageList, otgOpt)
+}
+
+// FaultLineEnd applies a line end fault, as determined by Oneliners algorithm for determining line end.
+func FaultLineEnd() FaultOption {
+	return func(fc *FaultConfig) {
+		fc.fltOpt[6] = 1
+	}
+}
+
+// FaultLineEndOutage applies a line end fault with outages. Line end is determined by Oneliners algorithm for determining line end. An outage list and options are required.
+func FaultLineEndOutage(outageList []int, otgOpt OutageOption) FaultOption {
+	return withOutage(func(fc *FaultConfig) {
+		fc.fltOpt[7] = 1
+	}, outageList, otgOpt)
+}
+
+// FaultIntermediate applies an intermediate fault at the provided percentage.
+func FaultIntermediate(percent float64) FaultOption {
+	return func(fc *FaultConfig) {
+		fc.fltOpt[8] = percent
+	}
+}
+
+// FaultIntermediate applies an intermediate fault with outage at the provided percentage. An outage list and options are required.
+func FaultIntermediateOutage(percent float64, outageList []int, otgOpt OutageOption) FaultOption {
+	return withOutage(func(fc *FaultConfig) {
+		fc.fltOpt[9] = percent
+	}, outageList, otgOpt)
+}
+
+// FaultIntermediate applies an intermediate fault with at the provided percentage with the end open.
+func FaultIntermediateEndOpen(percent float64) FaultOption {
+	return func(fc *FaultConfig) {
+		fc.fltOpt[10] = percent
+	}
+}
+
+// FaultIntermediateEndOpenOutage applies an intermediate fault with at the provided percentage with the end open and outages. An outage list and options are required.
+func FaultIntermediateEndOpenOutage(percent float64, outageList []int, otgOpt OutageOption) FaultOption {
+	return withOutage(func(fc *FaultConfig) {
+		fc.fltOpt[11] = percent
+	}, outageList, otgOpt)
+}
+
+// FaultIntermediateAuto applies an auto sequencing intermediate fault between from and to at the specified step.
+func FaultIntermediateAuto(step, from, to float64) FaultOption {
+	return func(fc *FaultConfig) {
+		fc.fltOpt[9] = step
+		fc.fltOpt[12] = from
+		fc.fltOpt[13] = to
+	}
 }
