@@ -52,6 +52,8 @@ type OlxAPI struct {
 	findBusNo         *syscall.Proc
 	setData           *syscall.Proc
 	getBusEquipment   *syscall.Proc
+
+	doFault *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -88,6 +90,8 @@ func New() *OlxAPI {
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
 	api.setData = api.dll.MustFindProc("OlxAPISetData")
 	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
+
+	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 
 	return api
 }
@@ -297,6 +301,37 @@ func (o *OlxAPI) GetBusEquipment(busHnd, eqType int, hnd *int) error {
 		return io.EOF
 	case OLXAPIFailure:
 		return ErrOlxAPI{"GetBusEquipment", o.ErrorString()}
+	}
+	return nil
+}
+
+func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt [4]int, outageLst []int, fltR, fltX float64, clearPrev bool) error {
+
+	// Cannot pass float64 by value as uintptr to 32bit dll using syscall directly.
+	// Must convert to two uint32 and pass consecutively.
+	// See https://github.com/golang/go/issues/29092
+	fltR322 := float64ToUint32(fltR)
+	fltX322 := float64ToUint32(fltX)
+
+	var clear int
+	if clearPrev {
+		clear = 1
+	}
+
+	o.Lock()
+	r, _, _ := o.doFault.Call(
+		uintptr(hnd),
+		uintptr(unsafe.Pointer(&fltConn[0])),
+		uintptr(unsafe.Pointer(&fltOpt)),
+		uintptr(unsafe.Pointer(&outageOpt)),
+		uintptr(unsafe.Pointer(&outageLst)),
+		uintptr(unsafe.Pointer(&fltR322[0])), uintptr(unsafe.Pointer(&fltR322[1])),
+		uintptr(unsafe.Pointer(&fltX322[0])), uintptr(unsafe.Pointer(&fltX322[1])),
+		uintptr(clear),
+	)
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"DoFault", o.ErrorString()}
 	}
 	return nil
 }

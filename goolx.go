@@ -324,3 +324,16 @@ func (c *Client) NextEquipmentByTag(eqType int, tags ...string) HandleIterator {
 func (c *Client) FindBusNo(n int) (int, error) {
 	return c.olxAPI.FindBusNo(n)
 }
+
+// DoFault runs a fault for the given equipment handle with the providedfault configurations.
+func (c *Client) DoFault(hnd int, config *FaultConfig) error {
+	return c.olxAPI.DoFault(
+		hnd,
+		config.fltConn,
+		config.fltOpt,
+		config.outageOpt,
+		config.outageList,
+		config.fltR, config.fltX,
+		config.clearPrev,
+	)
+}
