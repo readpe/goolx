@@ -122,6 +122,51 @@ func TestFindEquipmentByTag(t *testing.T) {
 	}
 }
 
+func TestDoFault(t *testing.T) {
+	c := NewClient()
+	defer c.Release()
+	hnd, err := c.FindBus("TEMP", 115)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("Okay", func(t *testing.T) {
+		config := NewFaultConfig()
+		if err := c.DoFault(hnd, config); err != nil {
+			t.Error(err)
+		}
+	})
+	t.Run("nil config", func(t *testing.T) {
+		if err := c.DoFault(hnd, nil); err == nil {
+			t.Errorf("expected non-nil error")
+		}
+	})
+	t.Run("Options", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			config *FaultConfig
+			want   string
+		}{
+			{
+				name:   "3LG,Close-in",
+				config: NewFaultConfig(FaultConn(ABC), FaultCloseIn()),
+				want:   "Close-in 3LG fault description here",
+			},
+			{
+				name:   "1LG, Close-in",
+				config: NewFaultConfig(FaultConn(AG), FaultCloseIn()),
+				want:   "Close-in 1LG fault description here",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				if err := c.DoFault(hnd, test.config); err != nil {
+					t.Error(err)
+				}
+			})
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {
