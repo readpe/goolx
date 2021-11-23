@@ -135,6 +135,15 @@ func TestGetEquipment(t *testing.T) {
 	t.Log(err, hnd)
 
 }
+
+func TestDeleteEquipment(t *testing.T) {
+	c := NewClient()
+	err := c.DeleteEquipment(0)
+	if err == nil {
+		t.Errorf("expected 'DeleteObj failure: Invalid Device Handle' error, got %v", err)
+	}
+}
+
 func TestNextEquipment(t *testing.T) {
 	c := NewClient()
 	defer c.Release()

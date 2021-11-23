@@ -90,6 +90,11 @@ func (c *Client) ReadChangeFile(name string) error {
 	return c.olxAPI.ReadChangeFile(name)
 }
 
+// DeleteEquipment deletes the equipment with the provided handle.
+func (c *Client) DeleteEquipment(hnd int) error {
+	return c.olxAPI.DeleteEquipment(hnd)
+}
+
 // NextEquipment returns an EquipmentIterator type. The EquipmentIterator will loop through all
 // equipment handles in the case until it reaches the end. This is done using the Next() and Hnd() methods.
 // Note: ASPEN equipment handle integers are not unique and are generated on data access. Therefore care

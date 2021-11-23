@@ -52,6 +52,7 @@ type OlxAPI struct {
 	closeDataFile     *syscall.Proc
 	readChangeFile    *syscall.Proc
 	getEquipment      *syscall.Proc
+	deleteEquipment   *syscall.Proc
 	equipmentType     *syscall.Proc
 	getData           *syscall.Proc
 	findBusByName     *syscall.Proc
@@ -97,6 +98,7 @@ func New() *OlxAPI {
 	api.closeDataFile = api.dll.MustFindProc("OlxAPICloseDataFile")
 	api.readChangeFile = api.dll.MustFindProc("OlxAPIReadChangeFile")
 	api.getEquipment = api.dll.MustFindProc("OlxAPIGetEquipment")
+	api.deleteEquipment = api.dll.MustFindProc("OlxAPIDeleteEquipment")
 	api.equipmentType = api.dll.MustFindProc("OlxAPIEquipmentType")
 	api.getData = api.dll.MustFindProc("OlxAPIGetData")
 	api.findBusByName = api.dll.MustFindProc("OlxAPIFindBusByName")
@@ -275,6 +277,17 @@ func (o *OlxAPI) GetEquipment(eqType int, hnd *int) error {
 		return io.EOF
 	case OLXAPIFailure:
 		return ErrOlxAPI{"GetEquipment", o.ErrorString()}
+	}
+	return nil
+}
+
+// DeleteEquipment deletes the equipment with the provided handle.
+func (o *OlxAPI) DeleteEquipment(hnd int) error {
+	o.Lock()
+	r, _, _ := o.deleteEquipment.Call(uintptr(hnd))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"DeleteEquipment", o.ErrorString()}
 	}
 	return nil
 }
