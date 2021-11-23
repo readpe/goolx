@@ -41,8 +41,7 @@ var OlxAPIDLLPath = `C:\Program Files (x86)\ASPEN\1LPFv15`
 // TODO(readpe): Test concurrent access of olxapi.dll
 type OlxAPI struct {
 	sync.Mutex
-	initialized bool
-	dll         *syscall.DLL // olxapi.dll
+	dll *syscall.DLL // olxapi.dll
 
 	// OlxAPI Procedures
 	errorString       *syscall.Proc
@@ -114,7 +113,6 @@ func New() *OlxAPI {
 }
 
 // haspRTCopy copies the hasp_rt.exe from ASPEN program directory to the current executables directory, only if the hash sum are different.
-// This appears to be a limitation of the olxapi.dll implementation.
 func haspRTCopy() error {
 	if haspRTShaSumDiff() {
 		return nil
