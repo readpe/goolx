@@ -52,7 +52,9 @@ func (cfg *FaultConfig) Apply(options ...FaultOption) {
 // NewFaultConfig returns a pointer to a new instance of FaultConfig for use with the Oneliner
 // DoFault procedure. Provide FaultOption functions to modify the underlying parameters.
 func NewFaultConfig(options ...FaultOption) *FaultConfig {
-	fc := &FaultConfig{}
+	fc := &FaultConfig{
+		outageList: make([]int, 1),
+	}
 	fc.Apply(options...)
 	return fc
 }

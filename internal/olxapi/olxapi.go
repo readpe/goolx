@@ -9,8 +9,13 @@
 package olxapi
 
 import (
+	"bytes"
+	"crypto/sha1"
 	"fmt"
+	"hash"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -24,9 +29,9 @@ const (
 )
 
 // OlxAPIDLLPath is the full path to the directory containing the olxapi.dll.
-// default is `C:\Programs Files (x86)\ASPEN\1LPFv14\OlxAPI`
+// default is `C:\Program Files (x86)\ASPEN\1LPFv15`
 // override if location is different.
-var OlxAPIDLLPath = `C:\Programs Files (x86)\ASPEN\1LPFv14\OlxAPI`
+var OlxAPIDLLPath = `C:\Program Files (x86)\ASPEN\1LPFv15`
 
 // OlxAPI represents a connection to the olxapi.dll. Provides method
 // wrappers for each api function. Instantiate using New().
@@ -36,7 +41,8 @@ var OlxAPIDLLPath = `C:\Programs Files (x86)\ASPEN\1LPFv14\OlxAPI`
 // TODO(readpe): Test concurrent access of olxapi.dll
 type OlxAPI struct {
 	sync.Mutex
-	dll *syscall.DLL // olxapi.dll
+	initialized bool
+	dll         *syscall.DLL // olxapi.dll
 
 	// OlxAPI Procedures
 	errorString       *syscall.Proc
@@ -47,13 +53,14 @@ type OlxAPI struct {
 	getEquipment      *syscall.Proc
 	equipmentType     *syscall.Proc
 	getData           *syscall.Proc
-	findbus           *syscall.Proc
+	findBusByName     *syscall.Proc
 	getEquipmentByTag *syscall.Proc
 	findBusNo         *syscall.Proc
 	setData           *syscall.Proc
 	getBusEquipment   *syscall.Proc
 
-	doFault *syscall.Proc
+	doFault            *syscall.Proc
+	faultDescriptionEx *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -72,6 +79,11 @@ func New() *OlxAPI {
 	}
 	defer changeBack()
 
+	// hasp_rt.exe needs to be in same directory as executable. This appears to be a limitation
+	// imposed by olxapi.dll, request feature to search PATH directories instead.
+	if err := haspRTCopy(); err != nil {
+		panic(err)
+	}
 	api := &OlxAPI{
 		dll: syscall.MustLoadDLL("olxapi.dll"),
 	}
@@ -85,15 +97,74 @@ func New() *OlxAPI {
 	api.getEquipment = api.dll.MustFindProc("OlxAPIGetEquipment")
 	api.equipmentType = api.dll.MustFindProc("OlxAPIEquipmentType")
 	api.getData = api.dll.MustFindProc("OlxAPIGetData")
-	api.findbus = api.dll.MustFindProc("OlxAPIFindBus")
+	api.findBusByName = api.dll.MustFindProc("OlxAPIFindBusByName")
 	api.getEquipmentByTag = api.dll.MustFindProc("OlxAPIFindEquipmentByTag")
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
 	api.setData = api.dll.MustFindProc("OlxAPISetData")
 	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
 
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
+	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
 
 	return api
+}
+
+// haspRTCopy copies the hasp_rt.exe from ASPEN program directory to the current executables directory, only if the hash sum are different.
+// This appears to be a limitation of the olxapi.dll implementation.
+func haspRTCopy() error {
+	if haspRTShaSumDiff() {
+		return nil
+	}
+	ex, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("haspRTCopy: could not locate executable path: %v ", err)
+	}
+	exPath := filepath.Dir(ex)
+	srcFile, err := os.Open(filepath.Join(OlxAPIDLLPath, `hasp_rt.exe`))
+	if err != nil {
+		return fmt.Errorf("haspRTCopy: could not locate hasp_rt.exe: %v", err)
+	}
+	defer srcFile.Close()
+	destFile, err := os.OpenFile(filepath.Join(exPath, `hasp_rt.exe`), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	if err != nil {
+		return fmt.Errorf("haspRTCopy: could not create hasp_rt.exe: %v", err)
+	}
+	defer destFile.Close()
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("haspRTCopy: could not create hasp_rt.exe: %v", err)
+	}
+	err = destFile.Sync()
+	if err != nil {
+		return fmt.Errorf("haspRTCopy: could not sync new hasp_rt.exe: %v", err)
+	}
+
+	return nil
+}
+
+func haspRTShaSumDiff() bool {
+	ex, err := os.Executable()
+	if err != nil {
+		return false
+	}
+	exPath := filepath.Dir(ex)
+	srcHash := sha1File(filepath.Join(OlxAPIDLLPath, `hasp_rt.exe`))
+	exHash := sha1File(filepath.Join(exPath, `hasp_rt.exe`))
+
+	return bytes.Equal(srcHash.Sum(nil), exHash.Sum(nil))
+}
+
+func sha1File(name string) hash.Hash {
+	h := sha1.New()
+	f, err := os.Open(name)
+	if err != nil {
+		return h
+	}
+	defer f.Close()
+
+	io.Copy(h, f)
+
+	return h
 }
 
 // Release releases the api dll. Must be called when done with use of dll.
@@ -184,7 +255,7 @@ func (o *OlxAPI) ReadChangeFile(name string) error {
 // is returned. Returns io.EOF error when iteration is exhausted.
 func (o *OlxAPI) GetEquipment(eqType int, hnd *int) error {
 	o.Lock()
-	r, _, _ := o.getEquipment.Call(uintptr(eqType), uintptr(unsafe.Pointer(&hnd)))
+	r, _, _ := o.getEquipment.Call(uintptr(eqType), uintptr(unsafe.Pointer(hnd)))
 	o.Unlock()
 	switch int(r) {
 	case -1:
@@ -221,23 +292,25 @@ func (o *OlxAPI) GetData(hnd, token int, buf []byte) error {
 	return nil
 }
 
-// FindBus calls the OlxAPIFindbus function.
-func (o *OlxAPI) FindBus(name string, kv float64) (hnd int, err error) {
+// FindBusByName calls the OlxAPIFindBusByName function.
+func (o *OlxAPI) FindBusByName(name string, kv float64) (int, error) {
 	b, err := utf8NullFromString(name)
 	if err != nil {
-		return hnd, fmt.Errorf("FindBus: %v", err)
+		return 0, fmt.Errorf("FindBus: %v", err)
 	}
 	// Cannot pass float64 by value as uintptr to 32bit dll using syscall directly.
 	// Must convert to two uint32 and pass consecutively.
 	// See https://github.com/golang/go/issues/29092
 	f322 := float64ToUint32(kv)
+	var hnd int
 	o.Lock()
-	r, _, _ := o.findbus.Call(uintptr(unsafe.Pointer(&b[0])), uintptr(f322[0]), uintptr(f322[1]))
+	r, _, _ := o.findBusByName.Call(uintptr(unsafe.Pointer(&b[0])), uintptr(f322[0]), uintptr(f322[1]), uintptr(unsafe.Pointer(&hnd)))
 	o.Unlock()
+
 	if r == OLXAPIFailure {
-		return hnd, ErrOlxAPI{"FindBus", o.ErrorString()}
+		return 0, ErrOlxAPI{"FindBusByName", o.ErrorString()}
 	}
-	return int(r), nil
+	return hnd, nil
 }
 
 // FindEquipmentByTag calls the OlxAPIFindEquipmentByTag function.
@@ -247,7 +320,7 @@ func (o *OlxAPI) FindEquipmentByTag(eqType int, hnd *int, tags ...string) error 
 		return err
 	}
 	o.Lock()
-	r, _, _ := o.getEquipmentByTag.Call(uintptr(unsafe.Pointer(&bTags[0])), uintptr(eqType), uintptr(unsafe.Pointer(&hnd)))
+	r, _, _ := o.getEquipmentByTag.Call(uintptr(unsafe.Pointer(&bTags[0])), uintptr(eqType), uintptr(unsafe.Pointer(hnd)))
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return ErrOlxAPI{"FindEquipmentByTag", o.ErrorString()}
@@ -322,8 +395,8 @@ func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt 
 	r, _, _ := o.doFault.Call(
 		uintptr(hnd),
 		uintptr(unsafe.Pointer(&fltConn[0])),
-		uintptr(unsafe.Pointer(&fltOpt)),
-		uintptr(unsafe.Pointer(&outageOpt)),
+		uintptr(unsafe.Pointer(&fltOpt[0])),
+		uintptr(unsafe.Pointer(&outageOpt[0])),
 		uintptr(unsafe.Pointer(&outageLst)),
 		uintptr(unsafe.Pointer(&fltR322[0])), uintptr(unsafe.Pointer(&fltR322[1])),
 		uintptr(unsafe.Pointer(&fltX322[0])), uintptr(unsafe.Pointer(&fltX322[1])),
@@ -334,4 +407,11 @@ func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt 
 		return ErrOlxAPI{"DoFault", o.ErrorString()}
 	}
 	return nil
+}
+
+func (o *OlxAPI) FaultDescriptionEx(index, flag int) string {
+	o.Lock()
+	r, _, _ := o.faultDescriptionEx.Call(uintptr(index), uintptr(flag))
+	o.Unlock()
+	return utf8StringFromPtr(r)
 }

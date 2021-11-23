@@ -15,6 +15,12 @@ import (
 	"github.com/readpe/goolx/internal/olxapi"
 )
 
+// Supported Oneliner Version/Build
+const (
+	OnelinerVersionSupported = 15.4
+	OnelinerBuildSupported   = 17321
+)
+
 // Byte size constants
 const (
 	cIntSize    = int(unsafe.Sizeof(int32(0)))
@@ -306,9 +312,9 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 	}
 }
 
-// FindBus returns the bus handle for the given bus name and kv, if found
-func (c *Client) FindBus(name string, kv float64) (int, error) {
-	return c.olxAPI.FindBus(name, kv)
+// FindBusByName returns the bus handle for the given bus name and kv, if found
+func (c *Client) FindBusByName(name string, kv float64) (int, error) {
+	return c.olxAPI.FindBusByName(name, kv)
 }
 
 // NextEquipmentByTag returns a NextEquipmentTag type which satisfies the HandleIterator interface.
@@ -327,6 +333,9 @@ func (c *Client) FindBusNo(n int) (int, error) {
 
 // DoFault runs a fault for the given equipment handle with the providedfault configurations.
 func (c *Client) DoFault(hnd int, config *FaultConfig) error {
+	if config == nil {
+		return fmt.Errorf("DoFault: config must not be nil")
+	}
 	return c.olxAPI.DoFault(
 		hnd,
 		config.fltConn,
@@ -336,4 +345,9 @@ func (c *Client) DoFault(hnd int, config *FaultConfig) error {
 		config.fltR, config.fltX,
 		config.clearPrev,
 	)
+}
+
+// DoFault runs a fault for the given equipment handle with the providedfault configurations.
+func (c *Client) FaultDescription(index int) string {
+	return strings.TrimSpace(c.olxAPI.FaultDescriptionEx(index, 0))
 }

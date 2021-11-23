@@ -1,6 +1,6 @@
 # Overview
 
-`Disclaimer: This project is not endorsed or affiliated with ASPEN Inc. This library is currently untested.`
+`Disclaimer: This project is not endorsed or affiliated with ASPEN Inc.`
 
 goolx is an **_unofficial_** Go wrapper around ASPEN's Oneliner API. It can be utilized to create programs which interact with Oneliner through the provided API functions. Additionally, it provides helper functions for common analysis tasks.
 
@@ -9,7 +9,7 @@ The goal of this module is to provide generic unopinionated abstractions for fau
 **This library is in Version 0.x.x, and may have breaking API changes during development.** 
 
 # Installation
-It is required users of this Go module have authorized licenses for the underlying ASPEN software. Obtaining this third-party software is outside the scope of this README. 
+It is required users of this Go module have authorized licenses for the underlying ASPEN software v15.4 or newer. Obtaining this third-party software is outside the scope of this README. 
 
 The module can be installed using the following `go get` command.
 ```bash
