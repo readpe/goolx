@@ -49,6 +49,7 @@ type OlxAPI struct {
 	versionInfo       *syscall.Proc
 	saveDataFile      *syscall.Proc
 	loadDataFile      *syscall.Proc
+	closeDataFile     *syscall.Proc
 	readChangeFile    *syscall.Proc
 	getEquipment      *syscall.Proc
 	equipmentType     *syscall.Proc
@@ -93,6 +94,7 @@ func New() *OlxAPI {
 	api.versionInfo = api.dll.MustFindProc("OlxAPIVersionInfo")
 	api.saveDataFile = api.dll.MustFindProc("OlxAPISaveDataFile")
 	api.loadDataFile = api.dll.MustFindProc("OlxAPILoadDataFile")
+	api.closeDataFile = api.dll.MustFindProc("OlxAPICloseDataFile")
 	api.readChangeFile = api.dll.MustFindProc("OlxAPIReadChangeFile")
 	api.getEquipment = api.dll.MustFindProc("OlxAPIGetEquipment")
 	api.equipmentType = api.dll.MustFindProc("OlxAPIEquipmentType")
@@ -230,6 +232,16 @@ func (o *OlxAPI) LoadDataFile(name string) error {
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return ErrOlxAPI{"LoadDataFile", o.ErrorString()}
+	}
+	return nil
+}
+
+func (o *OlxAPI) CloseDataFile() error {
+	o.Lock()
+	r, _, _ := o.closeDataFile.Call()
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"CloseDataFile", o.ErrorString()}
 	}
 	return nil
 }

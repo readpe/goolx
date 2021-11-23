@@ -80,6 +80,11 @@ func (c *Client) LoadDataFile(name string) error {
 	return c.olxAPI.LoadDataFile(name)
 }
 
+// CloseDataFile closes the currently loaded *.olr data file.
+func (c *Client) CloseDataFile() error {
+	return c.olxAPI.CloseDataFile()
+}
+
 // ReadChangeFile reads *.chf file from disk and applies to case
 func (c *Client) ReadChangeFile(name string) error {
 	return c.olxAPI.ReadChangeFile(name)

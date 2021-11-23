@@ -90,6 +90,14 @@ func TestLoadDatafile(t *testing.T) {
 	}
 }
 
+func TestCloseDataFile(t *testing.T) {
+	c := NewClient()
+	err := c.CloseDataFile()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestReadChangeFile(t *testing.T) {
 	c := NewClient()
 	tmp, err := ioutil.TempDir("", "goolx")
