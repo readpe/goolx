@@ -7,16 +7,18 @@ package goolx
 // FaultConn represents a fault connection for use with the DoFault procedure.
 // The index and code are specified in ASPEN Oneliner documentation.
 type faultConn struct {
-	idx  int
-	code int
+	idx    int
+	code   int
+	seCode float64 // stepped event connection code
 }
 
 // Fault connections.
+// TODO(readpe): Populate remaining connection codes.
 var (
-	ABC = faultConn{idx: 0, code: 1}
-	ABG = faultConn{idx: 1, code: 1}
-	AG  = faultConn{idx: 2, code: 1}
-	AB  = faultConn{idx: 3, code: 1}
+	ABC = faultConn{idx: 0, code: 1, seCode: 1}
+	ABG = faultConn{idx: 1, code: 1, seCode: 4}
+	AG  = faultConn{idx: 2, code: 1, seCode: 5}
+	AB  = faultConn{idx: 3, code: 1, seCode: 8}
 )
 
 // OutageOption represents a the method outages are applied with use in the DoFault procedure.
@@ -216,5 +218,125 @@ func FaultIntermediateAuto(step, from, to float64) FaultOption {
 		fc.fltOpt[9] = step
 		fc.fltOpt[12] = from
 		fc.fltOpt[13] = to
+	}
+}
+
+// SteppedEventConfig represents the configuration options for running stepped
+// event analysis, for use with DoSteppedEvent function.
+type SteppedEventConfig struct {
+	fltOpt [64]float64
+	runOpt [7]int
+	nTiers int
+}
+
+// NewSteppedEvent returns a new SteppedEventConfig instance with the applied options.
+// The default number of tiers is 3, this can be changed using the SteppedEventTiers option.
+func NewSteppedEvent(options ...SteppedEventOption) *SteppedEventConfig {
+	cfg := &SteppedEventConfig{nTiers: 3}
+	SteppedEventOptions(options...)(cfg)
+	return cfg
+}
+
+// SteppedEventOption represents a function to modify the SteppedEventConfig options.
+type SteppedEventOption func(cfg *SteppedEventConfig)
+
+// SteppedEventOptions consolidates a list of SteppedEventOption's into a single SteppedEventOption.
+func SteppedEventOptions(options ...SteppedEventOption) SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		for _, opt := range options {
+			opt(cfg)
+		}
+	}
+}
+
+// SteppedEventConn sets the fault connection code.
+func SteppedEventConn(conn faultConn) SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.fltOpt[0] = conn.seCode
+	}
+}
+
+// SteppedEventCloseIn applies a close-in fault by setting the intermediate to 0.
+func SteppedEventCloseIn() SteppedEventOption {
+	return SteppedEventIntermediate(0)
+}
+
+// SteppedEventIntermediate applies an intermediate fault at the given percentage.
+func SteppedEventIntermediate(percent float64) SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.fltOpt[1] = percent
+	}
+}
+
+// SteppedEventRX sets the stepped event fault impedance.
+func SteppedEventRX(r, x float64) SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.fltOpt[2] = r
+		cfg.fltOpt[3] = x
+	}
+}
+
+// SteppedEventAll option enabled checking all relay types during stepped event simulation.
+func SteppedEventAll() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		for i := range cfg.runOpt {
+			cfg.runOpt[i] = 1
+		}
+	}
+}
+
+// SteppedEventOCGnd option enables ground overcurrent relays during stepped event simulation.
+func SteppedEventOCGnd() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[0] = 1
+	}
+}
+
+// SteppedEventOCPh option enables phase overcurrent relays during stepped event simulation.
+func SteppedEventOCPh() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[1] = 1
+	}
+}
+
+// SteppedEventDSGnd option enables ground distance relays during stepped event simulation.
+func SteppedEventDSGnd() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[2] = 1
+	}
+}
+
+// SteppedEventDSPh option enables phase distance relays during stepped event simulation.
+func SteppedEventDSPh() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[3] = 1
+	}
+}
+
+// SteppedEventLogicScheme option enables protection schemes during stepped event simulation.
+func SteppedEventLogicScheme() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[4] = 1
+	}
+}
+
+// SteppedEventLogicVoltRelay option enables voltage relays during stepped event simulation.
+func SteppedEventLogicVoltRelay() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[5] = 1
+	}
+}
+
+// SteppedEventDiffRelay option enables differential relays during stepped event simulation.
+func SteppedEventDiffRelay() SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.runOpt[6] = 1
+	}
+}
+
+// SteppedEventTiers option sets the number of tiers from the initiating equipment to be evaluated.
+func SteppedEventTiers(n int) SteppedEventOption {
+	return func(cfg *SteppedEventConfig) {
+		cfg.nTiers = n
 	}
 }

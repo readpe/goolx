@@ -62,6 +62,7 @@ type OlxAPI struct {
 
 	doFault            *syscall.Proc
 	faultDescriptionEx *syscall.Proc
+	doSteppedEvent     *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -108,6 +109,7 @@ func New() *OlxAPI {
 
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
+	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
 
 	return api
 }
@@ -437,4 +439,16 @@ func (o *OlxAPI) FaultDescriptionEx(index, flag int) string {
 	r, _, _ := o.faultDescriptionEx.Call(uintptr(index), uintptr(flag))
 	o.Unlock()
 	return utf8StringFromPtr(r)
+}
+
+// DoSteppedEvent runs a stepped-event simulation utilizing the provided parameters.
+// Refer to Oneliner scripting documentation for options details.
+func (o *OlxAPI) DoSteppedEvent(hnd int, fltOpt [64]float64, runOpt [7]int, nTiers int) error {
+	o.Lock()
+	r, _, _ := o.doSteppedEvent.Call(uintptr(hnd), uintptr(unsafe.Pointer(&fltOpt[0])), uintptr(unsafe.Pointer(&runOpt[0])), uintptr(nTiers))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"DoSteppedEvent", o.ErrorString()}
+	}
+	return nil
 }

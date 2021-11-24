@@ -357,7 +357,12 @@ func (c *Client) DoFault(hnd int, config *FaultConfig) error {
 	)
 }
 
-// DoFault runs a fault for the given equipment handle with the providedfault configurations.
+// FaultDescription returns the fault description string for the specified index.
 func (c *Client) FaultDescription(index int) string {
 	return strings.TrimSpace(c.olxAPI.FaultDescriptionEx(index, 0))
+}
+
+// DoSteppedEvent runs a stepped event analysis for the given equipment with the provided config parameters.
+func (c *Client) DoSteppedEvent(hnd int, cfg *SteppedEventConfig) error {
+	return c.olxAPI.DoSteppedEvent(hnd, cfg.fltOpt, cfg.runOpt, cfg.nTiers)
 }
