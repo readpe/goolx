@@ -9,6 +9,8 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	"github.com/readpe/goolx/constants"
 )
 
 var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
@@ -128,7 +130,7 @@ func TestGetEquipment(t *testing.T) {
 		t.Error(err)
 	}
 	var hnd int
-	err = c.olxAPI.GetEquipment(TCBus, &hnd)
+	err = c.olxAPI.GetEquipment(constants.TCBus, &hnd)
 	if err != nil {
 		t.Error(err)
 	}
@@ -148,7 +150,7 @@ func TestNextEquipment(t *testing.T) {
 	c := NewClient()
 	defer c.Release()
 	c.LoadDataFile(testCase)
-	hi := c.NextEquipment(TCBus)
+	hi := c.NextEquipment(constants.TCBus)
 	var handles []int
 	for hi.Next() {
 		hnd := hi.Hnd()
@@ -295,7 +297,7 @@ func TestDoSteppedEvent(t *testing.T) {
 func ExampleData_Scan() {
 	var busHnd int
 	api := NewClient()
-	data := api.GetData(busHnd, BUSsName, BUSdKVP)
+	data := api.GetData(busHnd, constants.BUSsName, constants.BUSdKVP)
 
 	// Scan loads the data into the pointers provided populating the Bus structure in this example.
 	bus := Bus{}

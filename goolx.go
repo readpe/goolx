@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/readpe/goolx/constants"
 	"github.com/readpe/goolx/internal/olxapi"
 )
 
@@ -222,7 +223,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 	switch token / 100 {
 
-	case VTSTRING:
+	case constants.VTSTRING:
 		// string
 		buf := make([]byte, 10*KiB) // 10 KiB buffer for string data null terminated
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -233,7 +234,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		s := olxapi.UTF8NullToString(buf)
 		return s, nil
 
-	case VTDOUBLE:
+	case constants.VTDOUBLE:
 		// double
 		buf := make([]byte, 8) // 64 bit (8 byte) float64 buffer, equivalent to C Double
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -244,7 +245,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		f := math.Float64frombits(binary.LittleEndian.Uint64(buf))
 		return f, nil
 
-	case VTINTEGER:
+	case constants.VTINTEGER:
 		// integers
 		buf := make([]byte, 4) // 32 bit (4 byte) int32 buffer
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -256,7 +257,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 		return i, nil
 
-	case VTARRAYSTRING:
+	case constants.VTARRAYSTRING:
 		// string array
 		buf := make([]byte, 10*KiB) // 10 KiB buffer
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -269,11 +270,11 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 		return sa, nil
 
-	case VTARRAYINT:
+	case constants.VTARRAYINT:
 		// array length depends on token
 		var length int
 
-		length, ok := ArrayLengths[eqType][token]
+		length, ok := constants.ArrayLengths[eqType][token]
 		if !ok {
 			return nil, fmt.Errorf("array length not found for equipment type: %v; token: %v", eqType, token)
 		}
@@ -293,11 +294,11 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		// returning []int
 		return data, nil
 
-	case VTARRAYDOUBLE:
+	case constants.VTARRAYDOUBLE:
 		// array length depends on token
 		var length int
 
-		length, ok := ArrayLengths[eqType][token]
+		length, ok := constants.ArrayLengths[eqType][token]
 		if !ok {
 			return nil, fmt.Errorf("array length not found for equipment type: %v; token: %v", eqType, token)
 		}

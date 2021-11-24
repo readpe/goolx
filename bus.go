@@ -4,6 +4,8 @@
 
 package goolx
 
+import "github.com/readpe/goolx/constants"
+
 // Bus represents a bus equipment data structure. This does not represent all fields from
 // ASPEN model, future fields may be added as needed.
 type Bus struct {
@@ -21,13 +23,13 @@ type Bus struct {
 // Scanned into a new bus object and returned if no errors.
 func GetBus(c *Client, hnd int) (*Bus, error) {
 	data := c.GetData(hnd,
-		BUSsName,
-		BUSdKVnominal,
-		BUSnNumber,
-		BUSnArea,
-		BUSnZone,
-		BUSnTapBus,
-		BUSsComment,
+		constants.BUSsName,
+		constants.BUSdKVnominal,
+		constants.BUSnNumber,
+		constants.BUSnArea,
+		constants.BUSnZone,
+		constants.BUSnTapBus,
+		constants.BUSsComment,
 	)
 
 	// Scan data into bus instance. Similar to sql.Rows.Scan
