@@ -81,3 +81,40 @@ func (n *NextEquipmentByTag) Next() bool {
 func (n *NextEquipmentByTag) Hnd() int {
 	return n.hnd
 }
+
+// NextRelay is an handle iterator for getting
+// the next relay handle in the provided relay group. The Next() method
+// will retrieve the next handle if available and populate it for access
+// by Hnd(). If Next() returns false, then there was an error or the list
+// was exhausted. Once the iterator is exhausted it cannot be reused.
+type NextRelay struct {
+	c           *Client
+	rlyGroupHnd int
+	hnd         int
+	done        bool
+	err         error
+}
+
+// Next retrieves the next relay handle int he relay group. Returns
+// true if successful, and false if not. Hnd() should not be used
+// if Next() is false. This can be used in for loops.
+func (n *NextRelay) Next() bool {
+	if n.done {
+		return false
+	}
+	err := n.c.olxAPI.GetRelay(n.rlyGroupHnd, &n.hnd)
+	if err != nil {
+		n.done = true
+		if err == io.EOF {
+			// EOF is not an error, so don't set n.err = err.
+			return false
+		}
+		n.err = err
+	}
+	return true
+}
+
+// Hnd returns the current relay handle, Next() must be called first.
+func (n *NextRelay) Hnd() int {
+	return n.hnd
+}

@@ -121,7 +121,7 @@ type Data struct {
 // The order of the destination pointers should match the parameters queried with GetData.
 // Will return an error if any parameters produced an error during GetData call. Data will not
 // be populated in this case.
-func (d *Data) Scan(dest ...interface{}) error {
+func (d Data) Scan(dest ...interface{}) error {
 	// If any errors during GetData call, Scan is returned without populating data.
 	if d.err != nil {
 		return d.err
@@ -368,4 +368,13 @@ func (c *Client) FaultDescription(index int) string {
 // DoSteppedEvent runs a stepped event analysis for the given equipment with the provided config parameters.
 func (c *Client) DoSteppedEvent(hnd int, cfg *SteppedEventConfig) error {
 	return c.olxAPI.DoSteppedEvent(hnd, cfg.fltOpt, cfg.runOpt, cfg.nTiers)
+}
+
+// NextRelay returns an HandleIterator type. The HandleIterator will loop through all
+// relay handles in the provided relay group until it reaches the end. This is done using the Next() and Hnd() methods.
+// Note: ASPEN equipment handle integers are not unique and are generated on data access. Therefore care
+// should be taken when using handle across functions or applications. It is recommended to use the handle
+// immediately after retrieving to get unique equipment identifiers.
+func (c *Client) NextRelay(rlyGroupHnd int) HandleIterator {
+	return &NextRelay{c: c, rlyGroupHnd: rlyGroupHnd}
 }

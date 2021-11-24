@@ -63,6 +63,7 @@ type OlxAPI struct {
 	doFault            *syscall.Proc
 	faultDescriptionEx *syscall.Proc
 	doSteppedEvent     *syscall.Proc
+	getRelay           *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -110,6 +111,7 @@ func New() *OlxAPI {
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
 	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
+	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
 
 	return api
 }
@@ -449,6 +451,23 @@ func (o *OlxAPI) DoSteppedEvent(hnd int, fltOpt [64]float64, runOpt [7]int, nTie
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return ErrOlxAPI{"DoSteppedEvent", o.ErrorString()}
+	}
+	return nil
+}
+
+// GetRelay calls the OlxAPIGetRelay function. Returns
+// the relay handle. Returns an error if OLXAPIFailure
+// is returned. Returns io.EOF error when iteration is exhausted.
+func (o *OlxAPI) GetRelay(rlyGroupHnd int, hnd *int) error {
+	o.Lock()
+	r, _, _ := o.getRelay.Call(uintptr(rlyGroupHnd), uintptr(unsafe.Pointer(hnd)))
+	o.Unlock()
+	switch int(r) {
+	case -1:
+		// OlxAPI returns -1 when GetRelay is exhausted, returning EOF error.
+		return io.EOF
+	case OLXAPIFailure:
+		return ErrOlxAPI{"GetRelay", o.ErrorString()}
 	}
 	return nil
 }

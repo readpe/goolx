@@ -459,6 +459,24 @@ func TestClient_GetData(t *testing.T) {
 	}
 }
 
+func TestClient_NextRelay(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rlyGroups := c.NextEquipment(constants.TCRLYGroup)
+	if !rlyGroups.Next() {
+		t.Fatal("could not find relay group")
+	}
+	rlyGroupHnd := rlyGroups.Hnd()
+
+	relays := c.NextRelay(rlyGroupHnd)
+	for relays.Next() {
+		t.Log(relays.Hnd())
+	}
+}
+
 // Examples
 
 func ExampleData_Scan() {
