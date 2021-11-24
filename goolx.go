@@ -105,6 +105,13 @@ func (c *Client) NextEquipment(eqType int) HandleIterator {
 	return &NextEquipment{c: c, eqType: eqType}
 }
 
+// NextBusEquipment returns an EquipmentIterator type. The EquipmentIterator will loop through all
+// equipment handles at the provided bus in the case until it reaches the end. This is done using the Next() and Hnd() methods.
+// See NextEquipment for more details.
+func (c *Client) NextBusEquipment(busHnd, eqType int) HandleIterator {
+	return &NextBusEquipment{c: c, busHnd: busHnd, eqType: eqType}
+}
+
 // EquipmentType returns the equipment type code for the equipment with the provided handle
 func (c *Client) EquipmentType(hnd int) (int, error) {
 	return c.olxAPI.EquipmentType(hnd)

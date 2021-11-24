@@ -187,6 +187,33 @@ func TestNextEquipment(t *testing.T) {
 	}
 }
 
+func TestNextBusEquipment(t *testing.T) {
+	c := NewClient()
+	defer c.Release()
+	c.LoadDataFile(testCase)
+	hi := c.NextEquipment(constants.TCBus)
+	var handles []int
+	var branches []int
+	for hi.Next() {
+		handles = append(handles, hi.Hnd())
+		brs := c.NextBusEquipment(hi.Hnd(), constants.TCBranch)
+		for brs.Next() {
+			branches = append(branches, brs.Hnd())
+		}
+	}
+	expected := 9
+	got := len(handles)
+	if got != expected {
+		t.Errorf("expected %d bus handles got %d", expected, got)
+	}
+	expected = 23
+	got = len(branches)
+	if got != expected {
+		t.Errorf("expected %d bus handles got %d", expected, got)
+	}
+
+}
+
 // TODO (readpe): Get passing test.
 // func TestFindEquipmentByTag(t *testing.T) {
 // 	c := NewClient()
