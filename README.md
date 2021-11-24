@@ -1,3 +1,7 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/readpe/goolx.svg)](https://pkg.go.dev/github.com/readpe/goolx)
+[![Go Report Card](https://goreportcard.com/badge/github.com/readpe/goolx)](https://goreportcard.com/report/github.com/readpe/goolx)
+
+
 # Overview
 
 `Disclaimer: This project is not endorsed or affiliated with ASPEN Inc.`
