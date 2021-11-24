@@ -316,6 +316,149 @@ func TestDoSteppedEvent(t *testing.T) {
 	})
 }
 
+func TestClient_GetData(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	xfmrs := c.NextEquipment(constants.TCXFMR)
+	if !xfmrs.Next() {
+		t.Fatal("could not find transformer")
+	}
+	xfmrHnd := xfmrs.Hnd()
+	tests := []struct {
+		name      string
+		handle    int
+		token     int
+		wantValue interface{}
+	}{
+		{
+			name:      "BUSsName",
+			handle:    busHnd,
+			token:     constants.BUSsName,
+			wantValue: "TENNESSEE",
+		},
+		{
+			name:      "BUSsLocation",
+			handle:    busHnd,
+			token:     constants.BUSsLocation,
+			wantValue: "TENNESSE",
+		},
+		{
+			name:      "BUSsComment",
+			handle:    busHnd,
+			token:     constants.BUSsComment,
+			wantValue: "",
+		},
+		{
+			name:      "BUSdKVnominal",
+			handle:    busHnd,
+			token:     constants.BUSdKVnominal,
+			wantValue: 132.00,
+		},
+		{
+			name:      "BUSdKVP",
+			handle:    busHnd,
+			token:     constants.BUSdKVP,
+			wantValue: 0.00,
+		},
+		{
+			name:      "BUSdSPCx",
+			handle:    busHnd,
+			token:     constants.BUSdSPCx,
+			wantValue: 0.0,
+		},
+		{
+			name:      "BUSdSPCy",
+			handle:    busHnd,
+			token:     constants.BUSdSPCy,
+			wantValue: 0.0,
+		},
+		{
+			name:      "BUSnNumber",
+			handle:    busHnd,
+			token:     constants.BUSnNumber,
+			wantValue: 4,
+		},
+		{
+			name:      "BUSnArea",
+			handle:    busHnd,
+			token:     constants.BUSnArea,
+			wantValue: 1,
+		},
+		{
+			name:      "BUSnZone",
+			handle:    busHnd,
+			token:     constants.BUSnZone,
+			wantValue: 1,
+		},
+		{
+			name:      "BUSnTapBus",
+			handle:    busHnd,
+			token:     constants.BUSnTapBus,
+			wantValue: 0,
+		},
+		{
+			name:      "BUSnSubGroup",
+			handle:    busHnd,
+			token:     constants.BUSnSubGroup,
+			wantValue: 0,
+		},
+		{
+			name:      "BUSnSlack",
+			handle:    busHnd,
+			token:     constants.BUSnSlack,
+			wantValue: 0,
+		},
+		{
+			name:      "BUSnVisible",
+			handle:    busHnd,
+			token:     constants.BUSnVisible,
+			wantValue: 1,
+		},
+		{
+			name:      "XRsName",
+			handle:    xfmrHnd,
+			token:     constants.XRsName,
+			wantValue: "NV-NH",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			data := c.GetData(test.handle, test.token)
+			var got interface{}
+			switch test.wantValue.(type) {
+			case string:
+				var dest string
+				err = data.Scan(&dest)
+				got = dest
+			case int:
+				var dest int
+				err = data.Scan(&dest)
+				got = dest
+			case float64:
+				var dest float64
+				err = data.Scan(&dest)
+				got = dest
+			default:
+				t.Errorf("%T type not implemented", test.wantValue)
+			}
+			if err != nil {
+				t.Error(err)
+			}
+			if got != test.wantValue {
+				t.Errorf("expected %#v, got %#v", test.wantValue, got)
+			}
+
+		})
+	}
+}
+
 // Examples
 
 func ExampleData_Scan() {

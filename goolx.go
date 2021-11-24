@@ -131,7 +131,9 @@ func (d *Data) Scan(dest ...interface{}) error {
 		return fmt.Errorf("Scan: token and data numbers don't match")
 	}
 	for i, p := range dest {
-		convertAssignData(p, d.data[i])
+		if err := convertAssignData(p, d.data[i]); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -253,7 +255,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 			return nil, err
 		}
 
-		i := int32(binary.LittleEndian.Uint32(buf)) // Convert []byte to int32
+		i := int(binary.LittleEndian.Uint32(buf)) // Convert []byte to int
 
 		return i, nil
 
