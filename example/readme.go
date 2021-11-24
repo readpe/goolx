@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package example
+package main
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/readpe/goolx"
 	"github.com/readpe/goolx/constants"
+	"github.com/readpe/goolx/model"
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 		hnd := buses.Hnd()
 
 		// Get bus data
-		b, err := goolx.GetBus(c, hnd)
+		b, err := model.GetBus(c, hnd)
 		if err != nil {
 			log.Println(fmt.Errorf("could not get bus data: %v", err))
 			continue

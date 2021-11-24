@@ -2,9 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package goolx
+package model
 
-import "github.com/readpe/goolx/constants"
+import (
+	"github.com/readpe/goolx"
+	"github.com/readpe/goolx/constants"
+)
 
 // Bus represents a bus equipment data structure. This does not represent all fields from
 // ASPEN model, future fields may be added as needed.
@@ -21,7 +24,7 @@ type Bus struct {
 
 // GetBus retrieves the bus with the given handle using the provided api client. Data is
 // Scanned into a new bus object and returned if no errors.
-func GetBus(c *Client, hnd int) (*Bus, error) {
+func GetBus(c *goolx.Client, hnd int) (*Bus, error) {
 	data := c.GetData(hnd,
 		constants.BUSsName,
 		constants.BUSdKVnominal,

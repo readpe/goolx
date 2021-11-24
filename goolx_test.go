@@ -5,6 +5,7 @@
 package goolx
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -136,6 +137,29 @@ func TestGetEquipment(t *testing.T) {
 	}
 	t.Log(err, hnd)
 
+}
+
+func TestGetEquipmentType(t *testing.T) {
+	c := NewClient()
+	defer c.Release()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Error(err)
+	}
+	var hnd int
+	err = c.olxAPI.GetEquipment(constants.TCBus, &hnd)
+	if err != nil {
+		t.Error(err)
+	}
+	eqType, err := c.EquipmentType(hnd)
+	if err != nil {
+		t.Error(err)
+		t.Log(eqType, err)
+	}
+	if eqType != constants.TCBus {
+		t.Errorf("expected eqType %d, got %d", constants.TCBus, eqType)
+	}
+	t.Log(err, hnd)
 }
 
 func TestDeleteEquipment(t *testing.T) {
@@ -295,11 +319,28 @@ func TestDoSteppedEvent(t *testing.T) {
 // Examples
 
 func ExampleData_Scan() {
-	var busHnd int
+	// Create API client.
 	api := NewClient()
-	data := api.GetData(busHnd, constants.BUSsName, constants.BUSdKVP)
 
-	// Scan loads the data into the pointers provided populating the Bus structure in this example.
-	bus := Bus{}
-	data.Scan(&bus.Name, &bus.KVNominal)
+	// Load data file, and find bus handle.
+	api.LoadDataFile(testCase)
+	busHnd, err := api.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		return
+	}
+
+	// Get bus name and kv data.
+	data := api.GetData(busHnd, constants.BUSsName, constants.BUSdKVnominal)
+
+	// Scan loads the data into the pointers provided. Types must match the tokens provided.
+	var name string
+	var kV float64
+	data.Scan(&name, &kV)
+
+	fmt.Printf("Name: %s\n", name)
+	fmt.Printf("kV: %0.2f\n", kV)
+
+	// Output:
+	// Name: TENNESSEE
+	// kV: 132.00
 }

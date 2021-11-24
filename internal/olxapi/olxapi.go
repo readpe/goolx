@@ -297,7 +297,7 @@ func (o *OlxAPI) DeleteEquipment(hnd int) error {
 // is returned.
 func (o *OlxAPI) EquipmentType(hnd int) (int, error) {
 	o.Lock()
-	r, _, _ := o.getEquipment.Call(uintptr(hnd))
+	r, _, _ := o.equipmentType.Call(uintptr(hnd))
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return 0, ErrOlxAPI{"EquipmentType", o.ErrorString()}
@@ -312,7 +312,7 @@ func (o *OlxAPI) GetData(hnd, token int, buf []byte) error {
 	r, _, _ := o.getData.Call(uintptr(hnd), uintptr(token), uintptr(unsafe.Pointer(&buf[0])))
 	o.Unlock()
 	if r == OLXAPIFailure {
-		return ErrOlxAPI{"GetDataFloat64", o.ErrorString()}
+		return ErrOlxAPI{"GetData", o.ErrorString()}
 	}
 	return nil
 }

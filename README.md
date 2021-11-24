@@ -34,7 +34,8 @@ import (
 	"log"
 
 	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/olxapi"
+	"github.com/readpe/goolx/constants"
+	"github.com/readpe/goolx/model"
 )
 
 func main() {
@@ -52,12 +53,12 @@ func main() {
 	}
 
 	// Loop through all buses in case using NextEquipment iterator.
-	buses := c.NextEquipment(olxapi.TCBus)
+	buses := c.NextEquipment(constants.TCBus)
 	for buses.Next() {
 		hnd := buses.Hnd()
 
 		// Get bus data
-		b, err := goolx.GetBus(c, hnd)
+		b, err := model.GetBus(c, hnd)
 		if err != nil {
 			log.Println(fmt.Errorf("could not get bus data: %v", err))
 			continue
