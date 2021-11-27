@@ -431,3 +431,21 @@ func (c *Client) ReplaceObjTag(hnd int, oldTag, newTag string) error {
 	}
 	return c.SetObjTags(hnd, tags...)
 }
+
+// GetObjMemo returns the object memo field string.
+func (c *Client) GetObjMemo(hnd int) (string, error) {
+	s, err := c.olxAPI.GetObjMemo(hnd)
+	if err != nil {
+		return "", err
+	}
+	return s, nil
+}
+
+// SetObjMemo sets the object memo field, overwrites existing data.
+func (c *Client) SetObjMemo(hnd int, memo string) error {
+	err := c.olxAPI.SetObjMemo(hnd, memo)
+	if err != nil {
+		return err
+	}
+	return nil
+}

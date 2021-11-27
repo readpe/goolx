@@ -607,6 +607,56 @@ func TestClient_ObjTags(t *testing.T) {
 	})
 }
 
+func TestClient_ObjMemo(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = busHnd
+	t.Run("Get invalid handle", func(t *testing.T) {
+		_, err = c.GetObjMemo(0)
+		if err == nil {
+			t.Errorf("expected 'GetObjMemo failure: Invalid Device Handle', got %v", err)
+		}
+	})
+	t.Run("Get empty", func(t *testing.T) {
+		s, err := c.GetObjMemo(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+		t.Logf("%q", s)
+	})
+	t.Run("Set invalid handle", func(t *testing.T) {
+		err = c.SetObjMemo(0, "Hello World!")
+		if err == nil {
+			t.Errorf("expected 'SetObjMemo failure: Invalid Device Handle', got %v", err)
+		}
+	})
+	t.Run("Set okay", func(t *testing.T) {
+		err = c.SetObjMemo(busHnd, "Hello World!\nNew Line")
+		if err != nil {
+			t.Error(err)
+		}
+	})
+	t.Run("Get okay", func(t *testing.T) {
+		s, err := c.GetObjMemo(busHnd)
+		if err != nil {
+			t.Error(err)
+			t.Log(s)
+		}
+		expected := "Hello World!\nNew Line"
+		if s != expected {
+			t.Errorf("expected %q, got %q", expected, s)
+		}
+	})
+
+}
+
 // Examples
 
 func ExampleData_Scan() {

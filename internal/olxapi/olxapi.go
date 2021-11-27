@@ -68,6 +68,7 @@ type OlxAPI struct {
 	getObjTags *syscall.Proc
 	setObjTags *syscall.Proc
 	getObjMemo *syscall.Proc
+	setObjMemo *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -121,6 +122,7 @@ func New() *OlxAPI {
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
 
 	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
+	api.setObjMemo = api.dll.MustFindProc("OlxAPISetObjMemo")
 
 	return api
 }
@@ -504,6 +506,33 @@ func (o *OlxAPI) SetObjTags(hnd int, tags ...string) error {
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return ErrOlxAPI{"SetObjTags", o.ErrorString()}
+	}
+	return nil
+}
+
+// GetObjMemo calls OlxAPIGetObjMemo function. Returns the object memo string.
+func (o *OlxAPI) GetObjMemo(hnd int) (string, error) {
+	o.Lock()
+	r, _, _ := o.getObjMemo.Call(uintptr(hnd))
+	o.Unlock()
+	s := utf8StringFromPtr(r)
+	if strings.HasPrefix(s, "GetObjMemo failure:") {
+		return "", ErrOlxAPI{"GetObjMemo", s}
+	}
+	return s, nil
+}
+
+// SetObjMemo calls OlxAPISetObjMemo function. Sets the object memo field. Overwrites existing data.
+func (o *OlxAPI) SetObjMemo(hnd int, memo string) error {
+	bMemo, err := utf8NullFromString(memo)
+	if err != nil {
+		return err
+	}
+	o.Lock()
+	r, _, _ := o.setObjMemo.Call(uintptr(hnd), uintptr(unsafe.Pointer(&bMemo[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"SetObjMemo", o.ErrorString()}
 	}
 	return nil
 }
