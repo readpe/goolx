@@ -495,7 +495,7 @@ func (c *Client) PickFault(indx, tiers int) error {
 }
 
 // GetSCVoltagePhase gets the short circuit phase voltage for the equipment with the provided handle.
-// Returns Va, Vb, Vc Phasor types.
+// Returns Va, Vb, Vc Phasor types. PickFault must be called first.
 func (c *Client) GetSCVoltagePhase(hnd int) (Va, Vb, Vc Phasor, err error) {
 	vdOut1, vdOut2, err := c.olxAPI.GetSCVoltage(hnd, 3)
 	if err != nil {
@@ -517,5 +517,31 @@ func (c *Client) GetSCVoltageSeq(hnd int) (V0, V1, V2 Phasor, err error) {
 	V0 = Phasor(complex(vdOut1[0], vdOut2[0]))
 	V1 = Phasor(complex(vdOut1[1], vdOut2[1]))
 	V2 = Phasor(complex(vdOut1[2], vdOut2[2]))
+	return
+}
+
+// GetSCCurrentPhase gets the short circuit phase current for the equipment with the provided handle.
+// Returns Ia, Ib, Ic Phasor types. PickFault must be called first.
+func (c *Client) GetSCCurrentPhase(hnd int) (Ia, Ib, Ic Phasor, err error) {
+	vdOut1, vdOut2, err := c.olxAPI.GetSCCurrent(hnd, 3)
+	if err != nil {
+		return Ia, Ib, Ic, err
+	}
+	Ia = Phasor(complex(vdOut1[0], vdOut2[0]))
+	Ib = Phasor(complex(vdOut1[1], vdOut2[1]))
+	Ic = Phasor(complex(vdOut1[2], vdOut2[2]))
+	return
+}
+
+// GetSCCurrentSeq gets the short circuit sequence current for the equipment with the provided handle.
+// Returns I0, I1, I2 Phasor types. PickFault must be called first.
+func (c *Client) GetSCCurrentSeq(hnd int) (I0, I1, I2 Phasor, err error) {
+	vdOut1, vdOut2, err := c.olxAPI.GetSCCurrent(hnd, 1)
+	if err != nil {
+		return I0, I1, I2, err
+	}
+	I0 = Phasor(complex(vdOut1[0], vdOut2[0]))
+	I1 = Phasor(complex(vdOut1[1], vdOut2[1]))
+	I2 = Phasor(complex(vdOut1[2], vdOut2[2]))
 	return
 }

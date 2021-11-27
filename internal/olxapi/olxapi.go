@@ -614,3 +614,31 @@ func (o *OlxAPI) GetSCVoltage(hnd, styleCode int) (vdOut1 [9]float64, vdOut2 [9]
 	}
 	return vdOut1, vdOut2, nil
 }
+
+// GetSCCurrent returns the post fault current for a generator, load, shunt, switched shunt,
+// generating unit, load unit, shunt unit, transmission line, transformer,
+// switch or phase shifter.
+//
+// You can get the total fault current by calling this function with the
+// pre-defined handle of short circuit solution, HND_SC.
+//
+// 	Result style codes:
+//		1: output 012 sequence voltage in rectangular form
+//		2: output 012 sequence voltage in polar form
+//		3: output ABC phase voltage in rectangular form
+//		4: output ABC phase voltage in polar form
+func (o *OlxAPI) GetSCCurrent(hnd, styleCode int) (vdOut1 [12]float64, vdOut2 [12]float64, err error) {
+	switch {
+	case !o.faultRun:
+		return vdOut1, vdOut2, fmt.Errorf("GetSCCurrent: %v", ErrFaultNotRun)
+	case !o.faultPicked:
+		return vdOut1, vdOut2, fmt.Errorf("GetSCCurrent: %v", ErrFaultNotPicked)
+	}
+	o.Lock()
+	r, _, _ := o.getSCCurrent.Call(uintptr(hnd), uintptr(unsafe.Pointer(&vdOut1[0])), uintptr(unsafe.Pointer(&vdOut2[0])), uintptr(styleCode))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return vdOut1, vdOut2, ErrOlxAPI{"GetSCCurrent", o.ErrorString()}
+	}
+	return vdOut1, vdOut2, nil
+}

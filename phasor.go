@@ -47,7 +47,7 @@ func (p Phasor) Mag() float64 {
 
 // Ang returns the Phasor angle in degrees.
 func (p Phasor) Ang() float64 {
-	if p.Mag() < 1e-6 {
+	if p.Mag() < 1e-5 {
 		return 0
 	}
 	θ := cmplx.Phase(complex128(p))

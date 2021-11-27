@@ -755,6 +755,84 @@ func TestClient_GetSCVoltage(t *testing.T) {
 	})
 }
 
+func TestClient_GetSCCurrent(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = busHnd
+	t.Run("Invalid handle", func(t *testing.T) {
+		_, _, _, err := c.GetSCCurrentPhase(0)
+		if err == nil {
+			t.Errorf("expected 'GetVoltage Failure: Invalid Device Handle', got %v", err)
+		}
+	})
+	t.Run("No Fault", func(t *testing.T) {
+		err = c.PickFault(constants.SFFirst, 1)
+		if err == nil {
+			t.Errorf("expected 'PickFault: fault not simulated', got %v", err)
+		}
+		_, _, _, err := c.GetSCCurrentPhase(constants.HNDSC)
+		if err == nil {
+			t.Errorf("expected 'GetSCCurrent: fault not simulated', got %v", err)
+		}
+	})
+	t.Run("1LG", func(t *testing.T) {
+		err := c.DoFault(busHnd, NewFaultConfig(FaultConn(AG), FaultCloseIn()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = c.PickFault(constants.SFFirst, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ia, ib, ic, err := c.GetSCCurrentPhase(constants.HNDSC)
+		if err != nil {
+			t.Error(err)
+		}
+		got := fmt.Sprint(ia)
+		expected := "3690.63∠-79.4°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(ib)
+		expected = "0.00∠0.0°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(ic)
+		expected = "0.00∠0.0°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+
+		i0, i1, i2, err := c.GetSCCurrentSeq(constants.HNDSC)
+		if err != nil {
+			t.Error(err)
+		}
+		got = fmt.Sprint(i0)
+		expected = "1230.21∠-79.4°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(i1)
+		expected = "1230.21∠-79.4°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(i2)
+		expected = "1230.21∠-79.4°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {
