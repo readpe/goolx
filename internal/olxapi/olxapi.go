@@ -64,6 +64,10 @@ type OlxAPI struct {
 	faultDescriptionEx *syscall.Proc
 	doSteppedEvent     *syscall.Proc
 	getRelay           *syscall.Proc
+
+	getObjTags *syscall.Proc
+	setObjTags *syscall.Proc
+	getObjMemo *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -112,6 +116,11 @@ func New() *OlxAPI {
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
 	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
 	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
+
+	api.getObjTags = api.dll.MustFindProc("OlxAPIGetObjTags")
+	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
+
+	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
 
 	return api
 }
@@ -468,6 +477,33 @@ func (o *OlxAPI) GetRelay(rlyGroupHnd int, hnd *int) error {
 		return io.EOF
 	case OLXAPIFailure:
 		return ErrOlxAPI{"GetRelay", o.ErrorString()}
+	}
+	return nil
+}
+
+// GetObjTags calls OlxAPIGetObjTags function. Returns a string of comma separated tags.
+func (o *OlxAPI) GetObjTags(hnd int) (string, error) {
+	o.Lock()
+	r, _, _ := o.getObjTags.Call(uintptr(hnd))
+	o.Unlock()
+	s := strings.TrimSpace(utf8StringFromPtr(r))
+	if strings.HasPrefix(s, "GetObjTags failure:") {
+		return "", ErrOlxAPI{"GetObjTags", s}
+	}
+	return s, nil
+}
+
+// SetObjTags calls OlxAPISetObjTags function. Tags are joined into a comma separated string.
+func (o *OlxAPI) SetObjTags(hnd int, tags ...string) error {
+	bTags, err := utf8NullFromString(strings.Join(tags, ","))
+	if err != nil {
+		return err
+	}
+	o.Lock()
+	r, _, _ := o.setObjTags.Call(uintptr(hnd), uintptr(unsafe.Pointer(&bTags[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"SetObjTags", o.ErrorString()}
 	}
 	return nil
 }

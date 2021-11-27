@@ -385,3 +385,49 @@ func (c *Client) DoSteppedEvent(hnd int, cfg *SteppedEventConfig) error {
 func (c *Client) NextRelay(rlyGroupHnd int) HandleIterator {
 	return &NextRelay{c: c, rlyGroupHnd: rlyGroupHnd}
 }
+
+// GetObjTags returns a slice of tag strings for the equipment with the provided handle.
+func (c *Client) GetObjTags(hnd int) (tags []string, err error) {
+	s, err := c.olxAPI.GetObjTags(hnd)
+	if err != nil {
+		return
+	}
+	if s == "" {
+		return tags, nil
+	}
+	tags = strings.Split(s, ",")
+	return
+}
+
+// SetObjTags replaces the object tag with the provided tags. Will override existing tags, use GetObjTags to retrieve existing tags and append to if
+// the wanting to keep existing tags.
+func (c *Client) SetObjTags(hnd int, tags ...string) error {
+	err := c.olxAPI.SetObjTags(hnd, tags...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AppendObjTags appends the provided tags to the object tag string. Does not check for duplicate tags
+func (c *Client) AppendObjTags(hnd int, newTags ...string) error {
+	tags, err := c.GetObjTags(hnd)
+	if err != nil {
+		return err
+	}
+	return c.SetObjTags(hnd, append(tags, newTags...)...)
+}
+
+// ReplaceObjTag replaces all occurences of the old tag with the new tag provided.
+func (c *Client) ReplaceObjTag(hnd int, oldTag, newTag string) error {
+	tags, err := c.GetObjTags(hnd)
+	if err != nil {
+		return err
+	}
+	for i, tag := range tags {
+		if tag == oldTag {
+			tags[i] = newTag
+		}
+	}
+	return c.SetObjTags(hnd, tags...)
+}

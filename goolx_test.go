@@ -504,6 +504,109 @@ func TestClient_NextRelay(t *testing.T) {
 	}
 }
 
+func TestClient_ObjTags(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("Invalid handle", func(t *testing.T) {
+		_, err = c.GetObjTags(0)
+		if err == nil {
+			t.Errorf("expected 'GetObjTags failure: Invalid Device Handle', got %v", err)
+		}
+	})
+	t.Run("Empty", func(t *testing.T) {
+		tags, err := c.GetObjTags(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(tags) != 0 {
+			t.Errorf("expected 0, got %d tags", len(tags))
+		}
+	})
+	t.Run("Set", func(t *testing.T) {
+		err := c.SetObjTags(busHnd, "ABCD", "EFG")
+		if err != nil {
+			t.Error(err)
+		}
+		tags, err := c.GetObjTags(busHnd)
+		if err != nil {
+			t.Error(err)
+			t.Log(tags)
+		}
+		err = c.SetObjTags(busHnd, "HIJK", "LMNOP")
+		if err != nil {
+			t.Error(err)
+		}
+		tags, err = c.GetObjTags(busHnd)
+		if err != nil {
+			t.Error(err)
+			t.Log(tags)
+		}
+		expectedLen := 2
+		gotLen := len(tags)
+		if gotLen != expectedLen {
+			t.Fatalf("expected %d, got %d", expectedLen, gotLen)
+			t.Log(tags)
+		}
+		expectedTag := "HIJK"
+		gotTag := tags[0]
+		if gotTag != expectedTag {
+			t.Errorf("expected %q, got %q", expectedTag, gotTag)
+			t.Log(tags)
+		}
+	})
+	t.Run("Append", func(t *testing.T) {
+		err := c.AppendObjTags(busHnd, "ABCD", "EFG")
+		if err != nil {
+			t.Error(err)
+		}
+		tags, err := c.GetObjTags(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+		gotLen := len(tags)
+		expectedLen := 4
+		if len(tags) != expectedLen {
+			t.Fatalf("expected %d, got %d", expectedLen, gotLen)
+			t.Log(tags)
+		}
+		expectedTag := "EFG"
+		gotTag := tags[3]
+		if gotTag != expectedTag {
+			t.Errorf("expected %q, got %q", expectedTag, gotTag)
+			t.Log(tags)
+		}
+	})
+	t.Run("Replace", func(t *testing.T) {
+		err := c.ReplaceObjTag(busHnd, "EFG", "Hello World")
+		if err != nil {
+			t.Error(err)
+		}
+		tags, err := c.GetObjTags(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+		gotLen := len(tags)
+		expectedLen := 4
+		if len(tags) != expectedLen {
+			t.Fatalf("expected %d, got %d", expectedLen, gotLen)
+			t.Log(tags)
+		}
+		expectedTag := "Hello World"
+		gotTag := tags[3]
+		if gotTag != expectedTag {
+			t.Errorf("expected %q, got %q", expectedTag, gotTag)
+			t.Log(tags)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {
