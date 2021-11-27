@@ -11,6 +11,7 @@ package olxapi
 import (
 	"bytes"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -33,6 +34,11 @@ const (
 // override if location is different.
 var OlxAPIDLLPath = `C:\Program Files (x86)\ASPEN\1LPFv15`
 
+var (
+	ErrFaultNotRun    = errors.New("fault not simulated")
+	ErrFaultNotPicked = errors.New("fault not picked")
+)
+
 // OlxAPI represents a connection to the olxapi.dll. Provides method
 // wrappers for each api function. Instantiate using New().
 //
@@ -42,6 +48,9 @@ var OlxAPIDLLPath = `C:\Program Files (x86)\ASPEN\1LPFv15`
 type OlxAPI struct {
 	sync.Mutex
 	dll *syscall.DLL // olxapi.dll
+
+	faultRun    bool
+	faultPicked bool
 
 	// OlxAPI Procedures
 	errorString       *syscall.Proc
@@ -65,10 +74,13 @@ type OlxAPI struct {
 	doSteppedEvent     *syscall.Proc
 	getRelay           *syscall.Proc
 
-	getObjTags *syscall.Proc
-	setObjTags *syscall.Proc
-	getObjMemo *syscall.Proc
-	setObjMemo *syscall.Proc
+	getObjTags   *syscall.Proc
+	setObjTags   *syscall.Proc
+	getObjMemo   *syscall.Proc
+	setObjMemo   *syscall.Proc
+	pickFault    *syscall.Proc
+	getSCVoltage *syscall.Proc
+	getSCCurrent *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -112,17 +124,17 @@ func New() *OlxAPI {
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
 	api.setData = api.dll.MustFindProc("OlxAPISetData")
 	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
-
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
 	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
 	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
-
 	api.getObjTags = api.dll.MustFindProc("OlxAPIGetObjTags")
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
-
 	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
 	api.setObjMemo = api.dll.MustFindProc("OlxAPISetObjMemo")
+	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
+	api.getSCVoltage = api.dll.MustFindProc("OlxAPIGetSCVoltage")
+	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetSCCurrent")
 
 	return api
 }
@@ -182,6 +194,14 @@ func sha1File(name string) hash.Hash {
 	io.Copy(h, f)
 
 	return h
+}
+
+// resetFault resets the faultRun and faultPicked flags.
+func (o *OlxAPI) resetFault() {
+	o.Lock()
+	defer o.Unlock()
+	o.faultRun = false
+	o.faultPicked = false
 }
 
 // Release releases the api dll. Must be called when done with use of dll.
@@ -417,7 +437,8 @@ func (o *OlxAPI) GetBusEquipment(busHnd, eqType int, hnd *int) error {
 }
 
 func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt [4]int, outageLst []int, fltR, fltX float64, clearPrev bool) error {
-
+	// Resets faultRun and faultPicked flags.
+	o.resetFault()
 	// Cannot pass float64 by value as uintptr to 32bit dll using syscall directly.
 	// Must convert to two uint32 and pass consecutively.
 	// See https://github.com/golang/go/issues/29092
@@ -440,8 +461,10 @@ func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt 
 		uintptr(unsafe.Pointer(&fltX322[0])), uintptr(unsafe.Pointer(&fltX322[1])),
 		uintptr(clear),
 	)
+	o.faultRun = true
 	o.Unlock()
 	if r == OLXAPIFailure {
+		o.resetFault()
 		return ErrOlxAPI{"DoFault", o.ErrorString()}
 	}
 	return nil
@@ -457,10 +480,13 @@ func (o *OlxAPI) FaultDescriptionEx(index, flag int) string {
 // DoSteppedEvent runs a stepped-event simulation utilizing the provided parameters.
 // Refer to Oneliner scripting documentation for options details.
 func (o *OlxAPI) DoSteppedEvent(hnd int, fltOpt [64]float64, runOpt [7]int, nTiers int) error {
+	o.resetFault()
 	o.Lock()
 	r, _, _ := o.doSteppedEvent.Call(uintptr(hnd), uintptr(unsafe.Pointer(&fltOpt[0])), uintptr(unsafe.Pointer(&runOpt[0])), uintptr(nTiers))
+	o.faultRun = true
 	o.Unlock()
 	if r == OLXAPIFailure {
+		o.resetFault()
 		return ErrOlxAPI{"DoSteppedEvent", o.ErrorString()}
 	}
 	return nil
@@ -535,4 +561,56 @@ func (o *OlxAPI) SetObjMemo(hnd int, memo string) error {
 		return ErrOlxAPI{"SetObjMemo", o.ErrorString()}
 	}
 	return nil
+}
+
+// PickFault must be called before accessing short circuit simulation data. The given index and number of tiers
+// to be calculated are provided. See NextFault for an iterator which automatically switches from SFFirst to SFNext
+// after the first fault until the last.
+//
+//	The index codes are:
+//		SFLast     = -1
+//		SFNext     = -2
+//		SFFirst    = 1
+//		SFPrevious = -4
+func (o *OlxAPI) PickFault(indx, tiers int) error {
+	if !o.faultRun {
+		return fmt.Errorf("PickFault: %v", ErrFaultNotRun)
+	}
+	o.Lock()
+	defer o.Unlock()
+	r, _, _ := o.pickFault.Call(uintptr(indx), uintptr(tiers))
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"PickFault", o.ErrorString()}
+	}
+	o.faultPicked = true
+	return nil
+}
+
+// GetSCVoltage Retrieves post-fault voltage of a bus, or of connected buses of
+// a line, transformer, switch or phase shifter.
+//
+// The returned array size depends on the equipment type, a bus handle will
+// only return an array length of 3, whereas a line/transformer will return
+// an array of length 9. An invalid access error may occur if the incorrect
+// size is presented to the Call.
+//
+// 	Result style codes:
+//		1: output 012 sequence voltage in rectangular form
+//		2: output 012 sequence voltage in polar form
+//		3: output ABC phase voltage in rectangular form
+//		4: output ABC phase voltage in polar form
+func (o *OlxAPI) GetSCVoltage(hnd, styleCode int) (vdOut1 [9]float64, vdOut2 [9]float64, err error) {
+	switch {
+	case !o.faultRun:
+		return vdOut1, vdOut2, fmt.Errorf("GetSCVoltage: %v", ErrFaultNotRun)
+	case !o.faultPicked:
+		return vdOut1, vdOut2, fmt.Errorf("GetSCVoltage: %v", ErrFaultNotPicked)
+	}
+	o.Lock()
+	r, _, _ := o.getSCVoltage.Call(uintptr(hnd), uintptr(unsafe.Pointer(&vdOut1[0])), uintptr(unsafe.Pointer(&vdOut2[0])), uintptr(styleCode))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return vdOut1, vdOut2, ErrOlxAPI{"GetSCVoltage", o.ErrorString()}
+	}
+	return vdOut1, vdOut2, nil
 }

@@ -352,6 +352,7 @@ func (c *Client) FindBusNo(n int) (int, error) {
 }
 
 // DoFault runs a fault for the given equipment handle with the providedfault configurations.
+// PickFault or NextFault must be called prior to accessing results data.
 func (c *Client) DoFault(hnd int, config *FaultConfig) error {
 	if config == nil {
 		return fmt.Errorf("DoFault: config must not be nil")
@@ -478,4 +479,43 @@ func (c *Client) ReplaceAllObjMemo(hnd int, old, new string) error {
 	}
 	memo = strings.ReplaceAll(memo, old, new)
 	return c.SetObjMemo(hnd, memo)
+}
+
+// PickFault must be called before accessing short circuit simulation data. The given index and number of tiers
+// to be calculated are provided. See NextFault for an iterator which automatically switches from SFFirst to SFNext
+// after the first fault until the last.
+//
+//	The index codes are:
+//		SFLast     = -1
+//		SFNext     = -2
+//		SFFirst    = 1
+//		SFPrevious = -4
+func (c *Client) PickFault(indx, tiers int) error {
+	return c.olxAPI.PickFault(indx, tiers)
+}
+
+// GetSCVoltagePhase gets the short circuit phase voltage for the equipment with the provided handle.
+// Returns Va, Vb, Vc Phasor types.
+func (c *Client) GetSCVoltagePhase(hnd int) (Va, Vb, Vc Phasor, err error) {
+	vdOut1, vdOut2, err := c.olxAPI.GetSCVoltage(hnd, 3)
+	if err != nil {
+		return Va, Vb, Vc, err
+	}
+	Va = Phasor(complex(vdOut1[0], vdOut2[0]))
+	Vb = Phasor(complex(vdOut1[1], vdOut2[1]))
+	Vc = Phasor(complex(vdOut1[2], vdOut2[2]))
+	return
+}
+
+// GetSCVoltageSeq gets the short circuit sequence voltagse for the equipment with the provided handle.
+// Returns V0, V1, V2 Phasor types.
+func (c *Client) GetSCVoltageSeq(hnd int) (V0, V1, V2 Phasor, err error) {
+	vdOut1, vdOut2, err := c.olxAPI.GetSCVoltage(hnd, 1)
+	if err != nil {
+		return V0, V1, V2, err
+	}
+	V0 = Phasor(complex(vdOut1[0], vdOut2[0]))
+	V1 = Phasor(complex(vdOut1[1], vdOut2[1]))
+	V2 = Phasor(complex(vdOut1[2], vdOut2[2]))
+	return
 }

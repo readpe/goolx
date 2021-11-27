@@ -677,6 +677,84 @@ func TestClient_ObjMemo(t *testing.T) {
 	})
 }
 
+func TestClient_GetSCVoltage(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = busHnd
+	t.Run("Invalid handle", func(t *testing.T) {
+		_, _, _, err := c.GetSCVoltagePhase(0)
+		if err == nil {
+			t.Errorf("expected 'GetVoltage Failure: Invalid Device Handle', got %v", err)
+		}
+	})
+	t.Run("No Fault", func(t *testing.T) {
+		err = c.PickFault(constants.SFFirst, 1)
+		if err == nil {
+			t.Errorf("expected 'PickFault: fault not simulated', got %v", err)
+		}
+		_, _, _, err := c.GetSCVoltagePhase(busHnd)
+		if err == nil {
+			t.Errorf("expected 'GetSCVoltage: fault not simulated', got %v", err)
+		}
+	})
+	t.Run("1LG", func(t *testing.T) {
+		err := c.DoFault(busHnd, NewFaultConfig(FaultConn(AG), FaultCloseIn()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = c.PickFault(constants.SFFirst, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		va, vb, vc, err := c.GetSCVoltagePhase(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+		got := fmt.Sprint(va)
+		expected := "0.00∠0.0°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(vb)
+		expected = "82.91∠-125.0°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(vc)
+		expected = "81.78∠128.8°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+
+		v0, v1, v2, err := c.GetSCVoltageSeq(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+		got = fmt.Sprint(v0)
+		expected = "32.96∠-177.6°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(v1)
+		expected = "54.50∠1.8°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+		got = fmt.Sprint(v2)
+		expected = "21.54∠-179.1°"
+		if got != expected {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {
