@@ -655,6 +655,26 @@ func TestClient_ObjMemo(t *testing.T) {
 		}
 	})
 
+	t.Run("Contains", func(t *testing.T) {
+		if ok := c.ObjMemoContains(busHnd, "World"); !ok {
+			t.Errorf("expected contains World true, got false")
+			t.Log(c.GetObjMemo(busHnd))
+		}
+		if ok := c.ObjMemoContains(busHnd, "Universe"); ok {
+			t.Errorf("expected contains Universe false, got true")
+			t.Log(c.GetObjMemo(busHnd))
+		}
+	})
+	t.Run("ReplaceAll", func(t *testing.T) {
+		err := c.ReplaceAllObjMemo(busHnd, "World", "Universe")
+		if err != nil {
+			t.Error(err)
+		}
+		if ok := c.ObjMemoContains(busHnd, "Universe"); !ok {
+			t.Errorf("expected contains Universe true, got false")
+			t.Log(c.GetObjMemo(busHnd))
+		}
+	})
 }
 
 // Examples

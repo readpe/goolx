@@ -449,3 +449,33 @@ func (c *Client) SetObjMemo(hnd int, memo string) error {
 	}
 	return nil
 }
+
+// AppendObjMemo appends a new line followed by s to the object memo field.
+func (c *Client) AppendObjMemo(hnd int, s string) error {
+	memo, err := c.GetObjMemo(hnd)
+	if err != nil {
+		return err
+	}
+	memo = fmt.Sprintf("%s\n%s", memo, s)
+	return c.SetObjMemo(hnd, memo)
+}
+
+// ObjMemoContains reports whether substr is within the objects memo field.
+func (c *Client) ObjMemoContains(hnd int, substr string) bool {
+	memo, err := c.GetObjMemo(hnd)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(memo, substr)
+}
+
+// ReplaceAllObjMemo replaces all non-overlapping instances of old replaced by new
+// in the object memo field.
+func (c *Client) ReplaceAllObjMemo(hnd int, old, new string) error {
+	memo, err := c.GetObjMemo(hnd)
+	if err != nil {
+		return err
+	}
+	memo = strings.ReplaceAll(memo, old, new)
+	return c.SetObjMemo(hnd, memo)
+}
