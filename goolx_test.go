@@ -515,13 +515,13 @@ func TestClient_ObjTags(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Run("Invalid handle", func(t *testing.T) {
-		_, err = c.GetObjTags(0)
+		_, err = c.TagsGet(0)
 		if err == nil {
-			t.Errorf("expected 'GetObjTags failure: Invalid Device Handle', got %v", err)
+			t.Errorf("expected 'TagsGet failure: Invalid Device Handle', got %v", err)
 		}
 	})
 	t.Run("Empty", func(t *testing.T) {
-		tags, err := c.GetObjTags(busHnd)
+		tags, err := c.TagsGet(busHnd)
 		if err != nil {
 			t.Error(err)
 		}
@@ -530,20 +530,20 @@ func TestClient_ObjTags(t *testing.T) {
 		}
 	})
 	t.Run("Set", func(t *testing.T) {
-		err := c.SetObjTags(busHnd, "ABCD", "EFG")
+		err := c.TagsSet(busHnd, "ABCD", "EFG")
 		if err != nil {
 			t.Error(err)
 		}
-		tags, err := c.GetObjTags(busHnd)
+		tags, err := c.TagsGet(busHnd)
 		if err != nil {
 			t.Error(err)
 			t.Log(tags)
 		}
-		err = c.SetObjTags(busHnd, "HIJK", "LMNOP")
+		err = c.TagsSet(busHnd, "HIJK", "LMNOP")
 		if err != nil {
 			t.Error(err)
 		}
-		tags, err = c.GetObjTags(busHnd)
+		tags, err = c.TagsGet(busHnd)
 		if err != nil {
 			t.Error(err)
 			t.Log(tags)
@@ -562,11 +562,11 @@ func TestClient_ObjTags(t *testing.T) {
 		}
 	})
 	t.Run("Append", func(t *testing.T) {
-		err := c.AppendObjTags(busHnd, "ABCD", "EFG")
+		err := c.TagsAppend(busHnd, "ABCD", "EFG")
 		if err != nil {
 			t.Error(err)
 		}
-		tags, err := c.GetObjTags(busHnd)
+		tags, err := c.TagsGet(busHnd)
 		if err != nil {
 			t.Error(err)
 		}
@@ -584,11 +584,11 @@ func TestClient_ObjTags(t *testing.T) {
 		}
 	})
 	t.Run("Replace", func(t *testing.T) {
-		err := c.ReplaceObjTag(busHnd, "EFG", "Hello World")
+		err := c.TagReplace(busHnd, "EFG", "Hello World")
 		if err != nil {
 			t.Error(err)
 		}
-		tags, err := c.GetObjTags(busHnd)
+		tags, err := c.TagsGet(busHnd)
 		if err != nil {
 			t.Error(err)
 		}
@@ -619,32 +619,32 @@ func TestClient_ObjMemo(t *testing.T) {
 	}
 	_ = busHnd
 	t.Run("Get invalid handle", func(t *testing.T) {
-		_, err = c.GetObjMemo(0)
+		_, err = c.MemoGet(0)
 		if err == nil {
-			t.Errorf("expected 'GetObjMemo failure: Invalid Device Handle', got %v", err)
+			t.Errorf("expected 'MemoGet failure: Invalid Device Handle', got %v", err)
 		}
 	})
 	t.Run("Get empty", func(t *testing.T) {
-		s, err := c.GetObjMemo(busHnd)
+		s, err := c.MemoGet(busHnd)
 		if err != nil {
 			t.Error(err)
 		}
 		t.Logf("%q", s)
 	})
 	t.Run("Set invalid handle", func(t *testing.T) {
-		err = c.SetObjMemo(0, "Hello World!")
+		err = c.MemoSet(0, "Hello World!")
 		if err == nil {
-			t.Errorf("expected 'SetObjMemo failure: Invalid Device Handle', got %v", err)
+			t.Errorf("expected 'MemoSet failure: Invalid Device Handle', got %v", err)
 		}
 	})
 	t.Run("Set okay", func(t *testing.T) {
-		err = c.SetObjMemo(busHnd, "Hello World!\nNew Line")
+		err = c.MemoSet(busHnd, "Hello World!\nNew Line")
 		if err != nil {
 			t.Error(err)
 		}
 	})
 	t.Run("Get okay", func(t *testing.T) {
-		s, err := c.GetObjMemo(busHnd)
+		s, err := c.MemoGet(busHnd)
 		if err != nil {
 			t.Error(err)
 			t.Log(s)
@@ -656,23 +656,23 @@ func TestClient_ObjMemo(t *testing.T) {
 	})
 
 	t.Run("Contains", func(t *testing.T) {
-		if ok := c.ObjMemoContains(busHnd, "World"); !ok {
+		if ok := c.MemoContains(busHnd, "World"); !ok {
 			t.Errorf("expected contains World true, got false")
-			t.Log(c.GetObjMemo(busHnd))
+			t.Log(c.MemoGet(busHnd))
 		}
-		if ok := c.ObjMemoContains(busHnd, "Universe"); ok {
+		if ok := c.MemoContains(busHnd, "Universe"); ok {
 			t.Errorf("expected contains Universe false, got true")
-			t.Log(c.GetObjMemo(busHnd))
+			t.Log(c.MemoGet(busHnd))
 		}
 	})
 	t.Run("ReplaceAll", func(t *testing.T) {
-		err := c.ReplaceAllObjMemo(busHnd, "World", "Universe")
+		err := c.MemoReplaceAll(busHnd, "World", "Universe")
 		if err != nil {
 			t.Error(err)
 		}
-		if ok := c.ObjMemoContains(busHnd, "Universe"); !ok {
+		if ok := c.MemoContains(busHnd, "Universe"); !ok {
 			t.Errorf("expected contains Universe true, got false")
-			t.Log(c.GetObjMemo(busHnd))
+			t.Log(c.MemoGet(busHnd))
 		}
 	})
 }

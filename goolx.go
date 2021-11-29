@@ -387,8 +387,8 @@ func (c *Client) NextRelay(rlyGroupHnd int) HandleIterator {
 	return &NextRelay{c: c, rlyGroupHnd: rlyGroupHnd}
 }
 
-// GetObjTags returns a slice of tag strings for the equipment with the provided handle.
-func (c *Client) GetObjTags(hnd int) (tags []string, err error) {
+// TagsGet returns a slice of tag strings for the equipment with the provided handle.
+func (c *Client) TagsGet(hnd int) (tags []string, err error) {
 	s, err := c.olxAPI.GetObjTags(hnd)
 	if err != nil {
 		return
@@ -400,9 +400,9 @@ func (c *Client) GetObjTags(hnd int) (tags []string, err error) {
 	return
 }
 
-// SetObjTags replaces the object tag with the provided tags. Will override existing tags, use GetObjTags to retrieve existing tags and append to if
+// TagsSet replaces the object tag with the provided tags. Will override existing tags, use GetObjTags to retrieve existing tags and append to if
 // the wanting to keep existing tags.
-func (c *Client) SetObjTags(hnd int, tags ...string) error {
+func (c *Client) TagsSet(hnd int, tags ...string) error {
 	err := c.olxAPI.SetObjTags(hnd, tags...)
 	if err != nil {
 		return err
@@ -410,18 +410,18 @@ func (c *Client) SetObjTags(hnd int, tags ...string) error {
 	return nil
 }
 
-// AppendObjTags appends the provided tags to the object tag string. Does not check for duplicate tags
-func (c *Client) AppendObjTags(hnd int, newTags ...string) error {
-	tags, err := c.GetObjTags(hnd)
+// TagsAppend appends the provided tags to the object tag string. Does not check for duplicate tags
+func (c *Client) TagsAppend(hnd int, newTags ...string) error {
+	tags, err := c.TagsGet(hnd)
 	if err != nil {
 		return err
 	}
-	return c.SetObjTags(hnd, append(tags, newTags...)...)
+	return c.TagsSet(hnd, append(tags, newTags...)...)
 }
 
-// ReplaceObjTag replaces all occurences of the old tag with the new tag provided.
-func (c *Client) ReplaceObjTag(hnd int, oldTag, newTag string) error {
-	tags, err := c.GetObjTags(hnd)
+// TagReplace replaces all occurences of the old tag with the new tag provided.
+func (c *Client) TagReplace(hnd int, oldTag, newTag string) error {
+	tags, err := c.TagsGet(hnd)
 	if err != nil {
 		return err
 	}
@@ -430,11 +430,11 @@ func (c *Client) ReplaceObjTag(hnd int, oldTag, newTag string) error {
 			tags[i] = newTag
 		}
 	}
-	return c.SetObjTags(hnd, tags...)
+	return c.TagsSet(hnd, tags...)
 }
 
-// GetObjMemo returns the object memo field string.
-func (c *Client) GetObjMemo(hnd int) (string, error) {
+// MemoGet returns the object memo field string.
+func (c *Client) MemoGet(hnd int) (string, error) {
 	s, err := c.olxAPI.GetObjMemo(hnd)
 	if err != nil {
 		return "", err
@@ -442,8 +442,8 @@ func (c *Client) GetObjMemo(hnd int) (string, error) {
 	return s, nil
 }
 
-// SetObjMemo sets the object memo field, overwrites existing data.
-func (c *Client) SetObjMemo(hnd int, memo string) error {
+// MemoSet sets the object memo field, overwrites existing data.
+func (c *Client) MemoSet(hnd int, memo string) error {
 	err := c.olxAPI.SetObjMemo(hnd, memo)
 	if err != nil {
 		return err
@@ -451,34 +451,34 @@ func (c *Client) SetObjMemo(hnd int, memo string) error {
 	return nil
 }
 
-// AppendObjMemo appends a new line followed by s to the object memo field.
-func (c *Client) AppendObjMemo(hnd int, s string) error {
-	memo, err := c.GetObjMemo(hnd)
+// MemoAppend appends a new line followed by s to the object memo field.
+func (c *Client) MemoAppend(hnd int, s string) error {
+	memo, err := c.MemoGet(hnd)
 	if err != nil {
 		return err
 	}
 	memo = fmt.Sprintf("%s\n%s", memo, s)
-	return c.SetObjMemo(hnd, memo)
+	return c.MemoSet(hnd, memo)
 }
 
-// ObjMemoContains reports whether substr is within the objects memo field.
-func (c *Client) ObjMemoContains(hnd int, substr string) bool {
-	memo, err := c.GetObjMemo(hnd)
+// MemoContains reports whether substr is within the objects memo field.
+func (c *Client) MemoContains(hnd int, substr string) bool {
+	memo, err := c.MemoGet(hnd)
 	if err != nil {
 		return false
 	}
 	return strings.Contains(memo, substr)
 }
 
-// ReplaceAllObjMemo replaces all non-overlapping instances of old replaced by new
+// MemoReplaceAll replaces all non-overlapping instances of old replaced by new
 // in the object memo field.
-func (c *Client) ReplaceAllObjMemo(hnd int, old, new string) error {
-	memo, err := c.GetObjMemo(hnd)
+func (c *Client) MemoReplaceAll(hnd int, old, new string) error {
+	memo, err := c.MemoGet(hnd)
 	if err != nil {
 		return err
 	}
 	memo = strings.ReplaceAll(memo, old, new)
-	return c.SetObjMemo(hnd, memo)
+	return c.MemoSet(hnd, memo)
 }
 
 // PickFault must be called before accessing short circuit simulation data. The given index and number of tiers
