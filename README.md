@@ -4,8 +4,6 @@
 
 # Overview
 
-`Disclaimer: This project is not endorsed or affiliated with ASPEN Inc.`
-
 goolx is an **_unofficial_** Go wrapper around ASPEN's Oneliner API. It can be utilized to create programs which interact with Oneliner through the provided API functions. Additionally, it provides helper functions for common analysis tasks.
 
 The goal of this module is to provide generic unopinionated abstractions for fault analysis. These functions can be used as a building block for useful fault analysis application development.
@@ -67,6 +65,9 @@ func main() {
 	}
 }
 ```
+
+## Disclaimer
+This project is not endorsed or affiliated with ASPEN Inc.
 
 ## Acknowledgements
 Thanks to ASPEN Inc. for providing the Python API which inspired the development of this module.
