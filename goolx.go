@@ -505,6 +505,21 @@ func (c *Client) MemoReplaceAll(hnd int, old, new string) error {
 	return c.MemoSet(hnd, memo)
 }
 
+// GetGUID returns the GUID for the provided object.
+func (c *Client) GetGUID(hnd int) (string, error) {
+	return c.olxAPI.GetObjGUID(hnd)
+}
+
+// GetAreaName returns the area name for the provided area id.
+func (c *Client) GetAreaName(area int) (string, error) {
+	return c.olxAPI.GetAreaName(area)
+}
+
+// GetZoneName returns the zone name for the provided zone id.
+func (c *Client) GetZoneName(zone int) (string, error) {
+	return c.olxAPI.GetZoneName(zone)
+}
+
 // PickFault must be called before accessing short circuit simulation data. The given index and number of tiers
 // to be calculated are provided. See NextFault for an iterator which automatically switches from SFFirst to SFNext
 // after the first fault until the last.
