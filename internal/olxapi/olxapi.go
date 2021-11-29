@@ -77,10 +77,14 @@ type OlxAPI struct {
 	getSteppedEvent    *syscall.Proc
 	getRelay           *syscall.Proc
 
-	getObjTags   *syscall.Proc
-	setObjTags   *syscall.Proc
-	getObjMemo   *syscall.Proc
-	setObjMemo   *syscall.Proc
+	getObjTags  *syscall.Proc
+	setObjTags  *syscall.Proc
+	getObjMemo  *syscall.Proc
+	setObjMemo  *syscall.Proc
+	getObjGUID  *syscall.Proc
+	getAreaName *syscall.Proc
+	getZoneName *syscall.Proc
+
 	pickFault    *syscall.Proc
 	getSCVoltage *syscall.Proc
 	getSCCurrent *syscall.Proc
@@ -136,9 +140,12 @@ func New() *OlxAPI {
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
 	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
 	api.setObjMemo = api.dll.MustFindProc("OlxAPISetObjMemo")
+	api.getObjGUID = api.dll.MustFindProc("OlxAPIGetObjGUID")
+	api.getAreaName = api.dll.MustFindProc("OlxAPIGetAreaName")
+	api.getZoneName = api.dll.MustFindProc("OlxAPIGetZoneName")
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
 	api.getSCVoltage = api.dll.MustFindProc("OlxAPIGetSCVoltage")
-	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetSCCurrent")
+	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetObjGUID")
 
 	return api
 }
@@ -594,6 +601,42 @@ func (o *OlxAPI) SetObjMemo(hnd int, memo string) error {
 		return ErrOlxAPI{"SetObjMemo", o.ErrorString()}
 	}
 	return nil
+}
+
+// GetObjGUID returns the GUID of the given object. Returns empty string if error.
+func (o *OlxAPI) GetObjGUID(hnd int) (string, error) {
+	o.Lock()
+	r, _, _ := o.getObjGUID.Call(uintptr(hnd))
+	o.Unlock()
+	s := utf8StringFromPtr(r)
+	if strings.HasPrefix(s, "GetObjGUID failure:") {
+		return "", ErrOlxAPI{"GetObjGUID", s}
+	}
+	return s, nil
+}
+
+// GetAreaName returns the area name given the area id.
+func (o *OlxAPI) GetAreaName(area int) (string, error) {
+	o.Lock()
+	r, _, _ := o.getAreaName.Call(uintptr(area))
+	o.Unlock()
+	s := utf8StringFromPtr(r)
+	if strings.HasPrefix(s, "GetAreaName failure") {
+		return "", ErrOlxAPI{"GetAreaName", s}
+	}
+	return s, nil
+}
+
+// GetZoneName returns the area name given the zone id.
+func (o *OlxAPI) GetZoneName(zone int) (string, error) {
+	o.Lock()
+	r, _, _ := o.getZoneName.Call(uintptr(zone))
+	o.Unlock()
+	s := utf8StringFromPtr(r)
+	if strings.HasPrefix(s, "GetZoneName failure:") {
+		return "", ErrOlxAPI{"GetZoneName", s}
+	}
+	return s, nil
 }
 
 // PickFault must be called before accessing short circuit simulation data. The given index and number of tiers
