@@ -11,10 +11,12 @@ package olxapi
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,6 +74,7 @@ type OlxAPI struct {
 	doFault            *syscall.Proc
 	faultDescriptionEx *syscall.Proc
 	doSteppedEvent     *syscall.Proc
+	getSteppedEvent    *syscall.Proc
 	getRelay           *syscall.Proc
 
 	getObjTags   *syscall.Proc
@@ -127,6 +130,7 @@ func New() *OlxAPI {
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
 	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
+	api.getSteppedEvent = api.dll.MustFindProc("OlxAPIGetSteppedEvent")
 	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
 	api.getObjTags = api.dll.MustFindProc("OlxAPIGetObjTags")
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
@@ -490,6 +494,35 @@ func (o *OlxAPI) DoSteppedEvent(hnd int, fltOpt [64]float64, runOpt [7]int, nTie
 		return ErrOlxAPI{"DoSteppedEvent", o.ErrorString()}
 	}
 	return nil
+}
+
+// GetSteppedEvent gets the stepped event data for the provided step. Returns an error if step index is out of range.
+func (o *OlxAPI) GetSteppedEvent(step int) (t, current float64, userEvent int, eventDesc, faultDesc string, err error) {
+	var bufT, bufCurrent [8]byte    // double buffers
+	var bufEventDesc [4 * 512]byte  // event description string buffer, 4*512 bytes per Samples.py
+	var bufFaultDesc [50 * 512]byte // event description string buffer, 50*512 bytes per Samples.py
+
+	o.Lock()
+	r, _, _ := o.getSteppedEvent.Call(
+		uintptr(step),
+		uintptr(unsafe.Pointer(&bufT)),
+		uintptr(unsafe.Pointer(&bufCurrent)),
+		uintptr(unsafe.Pointer(&userEvent)),
+		uintptr(unsafe.Pointer(&bufEventDesc)),
+		uintptr(unsafe.Pointer(&bufFaultDesc)),
+	)
+	o.Unlock()
+	if r == OLXAPIFailure {
+		err = ErrOlxAPI{"GetSteppedEvent", o.ErrorString()}
+		return
+	}
+	// Convert result variables
+	t = math.Float64frombits(binary.LittleEndian.Uint64(bufT[:]))
+	current = math.Float64frombits(binary.LittleEndian.Uint64(bufCurrent[:]))
+	// userEvent set directly
+	eventDesc = UTF8NullToString(bufEventDesc[:])
+	faultDesc = UTF8NullToString(bufFaultDesc[:])
+	return
 }
 
 // GetRelay calls the OlxAPIGetRelay function. Returns

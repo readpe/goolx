@@ -215,3 +215,57 @@ func (n *NextFault) Indx() int {
 func (n *NextFault) Reset() {
 	n.indx = 0
 }
+
+// NextSteppedEvent is a stepped event result iterator for iterating through the available fault results,
+// utilizing the GetSteppedEvent function.
+// Iterator may be reused after calling Reset method.
+type NextSteppedEvent struct {
+	c    *Client
+	step int
+	data SteppedEvent
+	done bool
+	err  error
+}
+
+// Next picks the next fault using GetSteppedEvent function. Returns true if successfull.
+func (n *NextSteppedEvent) Next() bool {
+	if n.done {
+		return false
+	}
+	switch n.step {
+	case 0:
+		n.step = 1
+	default:
+		n.step++
+	}
+	data, err := n.c.GetSteppedEvent(n.step)
+	if err != nil {
+		n.done = true
+		switch err {
+		case io.EOF:
+			// EOF is not an error, so don't set n.err = err.
+			n.err = nil
+		default:
+			n.err = err
+		}
+		return false
+	}
+	n.data = data
+	return true
+}
+
+// Indx returns the current stepped event step index. Must only be called following a successful call to
+// the Next method.
+func (n *NextSteppedEvent) Indx() int {
+	return n.step
+}
+
+// Data returns the underlying SteppedEvent data, must follow a successfull call to the Next method.
+func (n *NextSteppedEvent) Data() SteppedEvent {
+	return n.data
+}
+
+// Reset resets the NextSteppedEvent iterator for reuse.
+func (n *NextSteppedEvent) Reset() {
+	n.step = 0
+}

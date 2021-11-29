@@ -408,3 +408,13 @@ func SteppedEventTiers(n int) SteppedEventOption {
 		cfg.nTiers = n
 	}
 }
+
+// SteppedEvent represents the stepped event result data returned by GetSteppedEvent function.
+type SteppedEvent struct {
+	Step             int
+	UserEvent        bool
+	Time             float64
+	Current          float64
+	EventDescription string
+	FaultDescription string
+}

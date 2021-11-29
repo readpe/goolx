@@ -378,6 +378,30 @@ func (c *Client) DoSteppedEvent(hnd int, cfg *SteppedEventConfig) error {
 	return c.olxAPI.DoSteppedEvent(hnd, cfg.fltOpt, cfg.runOpt, cfg.nTiers)
 }
 
+// GetSteppedEvent gets the stepped event data for the provided step. Returns an error if step index is out of range.
+func (c *Client) GetSteppedEvent(step int) (SteppedEvent, error) {
+	var userEvent bool
+	t, current, userEventInt, eventDesc, faultDesc, err := c.olxAPI.GetSteppedEvent(step)
+	if err != nil {
+		return SteppedEvent{}, err
+	}
+	if userEventInt == 1 {
+		userEvent = true
+	}
+	return SteppedEvent{
+		Step:             step,
+		UserEvent:        userEvent,
+		Time:             t,
+		Current:          current,
+		EventDescription: eventDesc,
+		FaultDescription: faultDesc,
+	}, nil
+}
+
+func (c *Client) NextSteppedEvent() *NextSteppedEvent {
+	return &NextSteppedEvent{c: c}
+}
+
 // NextRelay returns an HandleIterator type. The HandleIterator will loop through all
 // relay handles in the provided relay group until it reaches the end. This is done using the Next() and Hnd() methods.
 // Note: ASPEN equipment handle integers are not unique and are generated on data access. Therefore care

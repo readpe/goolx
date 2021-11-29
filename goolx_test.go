@@ -343,6 +343,48 @@ func TestDoSteppedEvent(t *testing.T) {
 	})
 }
 
+func TestClient_GetSteppedEvent(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = busHnd
+	t.Run("Okay", func(t *testing.T) {
+		err := c.DoSteppedEvent(busHnd, NewSteppedEvent(
+			SteppedEventConn(ABC),
+			SteppedEventCloseIn(),
+			SteppedEventAll(),
+		))
+		if err != nil {
+			t.Error(err)
+		}
+		se, err := c.GetSteppedEvent(2)
+		if err != nil {
+			t.Error(err)
+		}
+		expected := `0.12, 3872.7, false, "Event no. 1 at time= 0.124s\n7 OHIO 132.kV-6 NEVADA 132.kV 1L tripped by OC phase relay OH-P1\n", "Bus Fault on:           4 TENNESSEE        132. kV 3LG  "`
+		got := fmt.Sprintf("%0.2f, %0.1f, %t, %q, %q", se.Time, se.Current, se.UserEvent, se.EventDescription, se.FaultDescription)
+		if expected != got {
+			t.Errorf("expected %s\ngot %s", expected, got)
+		}
+		var gotSE []SteppedEvent
+		steppedEvents := c.NextSteppedEvent()
+		for steppedEvents.Next() {
+			gotSE = append(gotSE, steppedEvents.Data())
+		}
+		expectedLen := 4
+		gotLen := len(gotSE)
+		if expectedLen != gotLen {
+			t.Errorf("expected %d steps, got, %d", expectedLen, gotLen)
+		}
+	})
+}
+
 func TestClient_GetData(t *testing.T) {
 	c := NewClient()
 	err := c.LoadDataFile(testCase)
