@@ -494,6 +494,15 @@ func (c *Client) PickFault(indx, tiers int) error {
 	return c.olxAPI.PickFault(indx, tiers)
 }
 
+// NextFault returns a fault index iterator for looping through fault results. Will perform a PickFault function
+// call for each fault simulation result.
+func (c *Client) NextFault(tiers int) FaultIterator {
+	return &NextFault{
+		c:     c,
+		tiers: tiers,
+	}
+}
+
 // GetSCVoltagePhase gets the short circuit phase voltage for the equipment with the provided handle.
 // Returns Va, Vb, Vc Phasor types. PickFault must be called first.
 func (c *Client) GetSCVoltagePhase(hnd int) (Va, Vb, Vc Phasor, err error) {

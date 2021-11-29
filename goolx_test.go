@@ -833,6 +833,41 @@ func TestClient_GetSCCurrent(t *testing.T) {
 	})
 }
 
+func TestClient_NextFault(t *testing.T) {
+	c := NewClient()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = busHnd
+	t.Run("No Fault", func(t *testing.T) {
+		faults := c.NextFault(5)
+		for faults.Next() {
+			t.Log(faults.Indx(), c.FaultDescription(faults.Indx()))
+		}
+	})
+	t.Run("Faults", func(t *testing.T) {
+		err := c.DoFault(busHnd, NewFaultConfig(FaultConn(AG), FaultConn(ABC), FaultConn(ABG), FaultCloseIn()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []int
+		faults := c.NextFault(5)
+		for faults.Next() {
+			got = append(got, faults.Indx())
+		}
+		expectedLen := 3
+		gotLen := len(got)
+		if expectedLen != gotLen {
+			t.Errorf("expected %d, got %d faults", expectedLen, gotLen)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {

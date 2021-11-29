@@ -4,7 +4,11 @@
 
 package goolx
 
-import "io"
+import (
+	"io"
+
+	"github.com/readpe/goolx/constants"
+)
 
 // HandleIterator is a iterator interface for equipment handles.
 type HandleIterator interface {
@@ -155,4 +159,59 @@ func (n *NextRelay) Next() bool {
 // Hnd returns the current relay handle, Next() must be called first.
 func (n *NextRelay) Hnd() int {
 	return n.hnd
+}
+
+// FaultIterator is a iterator interface for fault results.
+type FaultIterator interface {
+	Next() bool
+	Indx() int
+	Reset()
+}
+
+// NextFault is a fault iterator for iterating through the available fault results,
+// utilizing the PickFault function.
+// Iterator may be reused after calling Reset method.
+type NextFault struct {
+	c     *Client
+	indx  int
+	tiers int
+	done  bool
+	err   error
+}
+
+// Next picks the next fault using PickFault function. Returns true if successfull.
+func (n *NextFault) Next() bool {
+	if n.done {
+		return false
+	}
+	switch n.indx {
+	case 0:
+		n.indx = constants.SFFirst
+	default:
+		n.indx++
+	}
+	err := n.c.PickFault(n.indx, n.tiers)
+	if err != nil {
+		n.done = true
+		switch err {
+		case io.EOF:
+			// EOF is not an error, so don't set n.err = err.
+			n.err = nil
+		default:
+			n.err = err
+		}
+		return false
+	}
+	return true
+}
+
+// Indx returns the current picked fault index. Must only be called following a successful call to
+// the Next method.
+func (n *NextFault) Indx() int {
+	return n.indx
+}
+
+// Reset resets the NextFault iterator for reuse.
+func (n *NextFault) Reset() {
+	n.indx = 0
 }

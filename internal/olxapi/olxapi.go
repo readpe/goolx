@@ -577,12 +577,15 @@ func (o *OlxAPI) PickFault(indx, tiers int) error {
 		return fmt.Errorf("PickFault: %v", ErrFaultNotRun)
 	}
 	o.Lock()
-	defer o.Unlock()
 	r, _, _ := o.pickFault.Call(uintptr(indx), uintptr(tiers))
+	o.faultPicked = true
+	o.Unlock()
 	if r == OLXAPIFailure {
+		o.Lock()
+		o.faultPicked = false
+		o.Unlock()
 		return ErrOlxAPI{"PickFault", o.ErrorString()}
 	}
-	o.faultPicked = true
 	return nil
 }
 
