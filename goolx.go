@@ -30,7 +30,8 @@ const (
 	MiB         = 1 << (10 * 2)
 )
 
-// Client represents a new goolx api client.
+// Client represents a new goolx api client. OlxAPI calls cannot be called in parallel,
+// the underlying dll procedure calls share memory and do not support cuncurency.
 type Client struct {
 	olxAPI *olxapi.OlxAPI
 }
