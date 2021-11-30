@@ -81,6 +81,11 @@ func (c *Client) LoadDataFile(name string) error {
 	return c.olxAPI.LoadDataFile(name)
 }
 
+// Returns the currently loaded olr filename.
+func (c *Client) GetOlrFilename() string {
+	return c.olxAPI.GetOlrFileName()
+}
+
 // CloseDataFile closes the currently loaded *.olr data file.
 func (c *Client) CloseDataFile() error {
 	return c.olxAPI.CloseDataFile()

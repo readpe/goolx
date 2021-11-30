@@ -59,6 +59,7 @@ type OlxAPI struct {
 	versionInfo       *syscall.Proc
 	saveDataFile      *syscall.Proc
 	loadDataFile      *syscall.Proc
+	getOlrFileName    *syscall.Proc
 	closeDataFile     *syscall.Proc
 	readChangeFile    *syscall.Proc
 	getEquipment      *syscall.Proc
@@ -120,6 +121,7 @@ func New() *OlxAPI {
 	api.versionInfo = api.dll.MustFindProc("OlxAPIVersionInfo")
 	api.saveDataFile = api.dll.MustFindProc("OlxAPISaveDataFile")
 	api.loadDataFile = api.dll.MustFindProc("OlxAPILoadDataFile")
+	api.getOlrFileName = api.dll.MustFindProc("OlxAPIGetOlrFileName")
 	api.closeDataFile = api.dll.MustFindProc("OlxAPICloseDataFile")
 	api.readChangeFile = api.dll.MustFindProc("OlxAPIReadChangeFile")
 	api.getEquipment = api.dll.MustFindProc("OlxAPIGetEquipment")
@@ -280,6 +282,14 @@ func (o *OlxAPI) LoadDataFile(name string) error {
 		return ErrOlxAPI{"LoadDataFile", o.ErrorString()}
 	}
 	return nil
+}
+
+// GetOlrFileName returns the currently loaded olr file name.
+func (o *OlxAPI) GetOlrFileName() string {
+	o.Lock()
+	r, _, _ := o.getOlrFileName.Call()
+	o.Unlock()
+	return utf8StringFromPtr(r)
 }
 
 func (o *OlxAPI) CloseDataFile() error {

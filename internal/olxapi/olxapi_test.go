@@ -4,6 +4,30 @@ import "testing"
 
 var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
 
+func TestOlxAPI_GetOlrFilename(t *testing.T) {
+	api := New()
+	err := api.LoadDataFile(testCase)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Run("Okay", func(t *testing.T) {
+		got := api.GetOlrFileName()
+		expected := testCase
+		if expected != got {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+	// OlxAPI calls are not concurrent, they share underlying memory through the loaded dll.
+	t.Run("Test non-concurrent", func(t *testing.T) {
+		api2 := New()
+		got := api2.GetOlrFileName()
+		expected := testCase
+		if expected != got {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
+
 func TestOlxAPI_GetObjGUID(t *testing.T) {
 	api := New()
 	err := api.LoadDataFile(testCase)
