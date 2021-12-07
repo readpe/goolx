@@ -17,15 +17,6 @@ func TestOlxAPI_GetOlrFilename(t *testing.T) {
 			t.Errorf("expected %q, got %q", expected, got)
 		}
 	})
-	// OlxAPI calls are not concurrent, they share underlying memory through the loaded dll.
-	t.Run("Test non-concurrent", func(t *testing.T) {
-		api2 := New()
-		got := api2.GetOlrFileName()
-		expected := testCase
-		if expected != got {
-			t.Errorf("expected %q, got %q", expected, got)
-		}
-	})
 }
 
 func TestOlxAPI_GetObjGUID(t *testing.T) {

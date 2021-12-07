@@ -147,7 +147,7 @@ func New() *OlxAPI {
 	api.getZoneName = api.dll.MustFindProc("OlxAPIGetZoneName")
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
 	api.getSCVoltage = api.dll.MustFindProc("OlxAPIGetSCVoltage")
-	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetObjGUID")
+	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetSCCurrent")
 
 	return api
 }
