@@ -26,6 +26,8 @@ GARCH=386
 ```
 
 # Usage Example
+Also see [OlxCLI](https://github.com/readpe/olxcli) for example usage. 
+
 ```go
 import (
 	"fmt"
