@@ -1,6 +1,10 @@
 package olxapi
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/readpe/goolx/constants"
+)
 
 var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
 
@@ -93,4 +97,33 @@ func TestOlxAPI_GetZoneName(t *testing.T) {
 			t.Errorf("expected %q, got %q", expected, got)
 		}
 	})
+}
+
+func TestOlxAPI_GetRelayTime(t *testing.T) {
+	api := New()
+	defer api.Release()
+	err := api.LoadDataFile(testCase, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var hnd int
+	err = api.GetEquipment(constants.TCRLYGroup, &hnd)
+	if err != nil {
+		t.Error(err)
+	}
+	var rlyHnd int
+	err = api.GetRelay(hnd, &rlyHnd)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Run("Okay", func(t *testing.T) {
+		opTime, opText, err := api.GetRelayTime(rlyHnd, 0, true)
+		if err == nil {
+			t.Errorf("expected 'fault simulation result not available' error, got %v", err)
+			t.Log(hnd, rlyHnd, opTime, opText)
+		}
+	})
+
 }

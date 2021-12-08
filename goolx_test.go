@@ -1015,3 +1015,63 @@ func ExampleData_Scan() {
 	// Name: TENNESSEE
 	// kV: 132.00
 }
+
+func TestClient_GetRelayTime(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	err := api.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Okay", func(t *testing.T) {
+		rlyGroups := api.NextEquipment(constants.TCRLYGroup)
+		for rlyGroups.Next() {
+			rgHnd := rlyGroups.Hnd()
+
+			err := api.DoFault(rgHnd, NewFaultConfig(FaultConn(AG), FaultLineEnd(), FaultClearPrev(true)))
+			if err != nil {
+				t.Error(err)
+			}
+
+			relays := api.NextRelay(rgHnd)
+			for relays.Next() {
+				rlyHnd := relays.Hnd()
+				var rid string
+				if err := api.GetData(rlyHnd, constants.RDsID).Scan(&rid); err != nil {
+					t.Error(err)
+				}
+				faults := api.NextFault(5)
+				for faults.Next() {
+					idx := faults.Indx()
+					fd := api.FaultDescription(idx)
+					opTime, opText, err := api.GetRelayTime(rlyHnd, 1, true)
+					if err != nil {
+						t.Error(err)
+						t.Log(rgHnd, rlyHnd, opTime, opText)
+					}
+					expected_rid := "CL-P1"
+					expected := "TOC=1558.29"
+					if rid == expected_rid && opText != expected {
+						t.Errorf("relay %q expected %q, got %q", rid, expected, opText)
+						t.Log(fd, rid, opTime, opText)
+					}
+					expected_rid = "OH-G1"
+					expected = "TOC=1513.43"
+					if rid == expected_rid && opText != expected {
+						t.Errorf("relay %q expected %q, got %q", rid, expected, opText)
+						t.Log(fd, rid, opTime, opText)
+					}
+					expected_rid = "Clator_NV G1"
+					expected = "ZG2"
+					if rid == expected_rid && opText != expected {
+						t.Errorf("relay %q expected %q, got %q", rid, expected, opText)
+						t.Log(fd, rid, opTime, opText)
+					}
+				}
+			}
+		}
+	})
+
+}

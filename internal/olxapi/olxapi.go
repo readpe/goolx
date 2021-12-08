@@ -78,6 +78,7 @@ type OlxAPI struct {
 	doSteppedEvent     *syscall.Proc
 	getSteppedEvent    *syscall.Proc
 	getRelay           *syscall.Proc
+	getRelayTime       *syscall.Proc
 
 	getObjTags  *syscall.Proc
 	setObjTags  *syscall.Proc
@@ -140,6 +141,7 @@ func New() *OlxAPI {
 	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
 	api.getSteppedEvent = api.dll.MustFindProc("OlxAPIGetSteppedEvent")
 	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
+	api.getRelayTime = api.dll.MustFindProc("OlxAPIGetRelayTime")
 	api.getObjTags = api.dll.MustFindProc("OlxAPIGetObjTags")
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
 	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
@@ -585,6 +587,36 @@ func (o *OlxAPI) GetRelay(rlyGroupHnd int, hnd *int) error {
 		return ErrOlxAPI{"GetRelay", o.ErrorString()}
 	}
 	return nil
+}
+
+func (o *OlxAPI) GetRelayTime(rlyHnd int, mult float64, tripOnly bool) (float64, string, error) {
+
+	// Trip only flag only considers relays which trip.
+	var to int
+	if tripOnly {
+		to = 1
+	}
+
+	f322 := float64ToUint32(mult)  // Current multiplication factor.
+	bufTime := make([]byte, 8)     // Operation time buffer.
+	bufOpText := make([]byte, 128) // Operation text buffer, 128 bytes.
+
+	o.Lock()
+	r, _, _ := o.getRelayTime.Call(
+		uintptr(rlyHnd),
+		uintptr(f322[0]), uintptr(f322[1]),
+		uintptr(unsafe.Pointer(&bufTime[0])),
+		uintptr(unsafe.Pointer(&bufOpText[0])),
+		uintptr(to),
+	)
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return 0, "", ErrOlxAPI{"GetRelayTime", o.ErrorString()}
+	}
+
+	opTime := math.Float64frombits(binary.LittleEndian.Uint64(bufTime))
+	opText := UTF8NullToString(bufOpText)
+	return opTime, opText, nil
 }
 
 // GetObjTags calls OlxAPIGetObjTags function. Returns a string of comma separated tags.

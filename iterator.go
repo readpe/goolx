@@ -152,6 +152,7 @@ func (n *NextRelay) Next() bool {
 			return false
 		}
 		n.err = err
+		return false
 	}
 	return true
 }

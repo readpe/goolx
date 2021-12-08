@@ -464,6 +464,16 @@ func (c *Client) NextRelay(rlyGroupHnd int) HandleIterator {
 	return &NextRelay{c: c, rlyGroupHnd: rlyGroupHnd}
 }
 
+// GetRelayTime returns the relay operation time and operation text for the specified relay. TripOnly will only consider tripping relays if true.
+// The mult factor multiplies the relay current by the factor provided, this should normally be set to 1.0, an error will be
+// returned if mult == 0 which will just result in NOP results.
+func (c *Client) GetRelayTime(rlyHnd int, mult float64, tripOnly bool) (float64, string, error) {
+	if mult == 0 {
+		return 0, "", fmt.Errorf("GetRelayTime: mult factor should be greater than 0")
+	}
+	return c.olxAPI.GetRelayTime(rlyHnd, mult, tripOnly)
+}
+
 // TagsGet returns a slice of tag strings for the equipment with the provided handle.
 func (c *Client) TagsGet(hnd int) (tags []string, err error) {
 	s, err := c.olxAPI.GetObjTags(hnd)
