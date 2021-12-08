@@ -6,7 +6,7 @@ var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
 
 func TestOlxAPI_GetOlrFilename(t *testing.T) {
 	api := New()
-	err := api.LoadDataFile(testCase)
+	err := api.LoadDataFile(testCase, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -21,7 +21,7 @@ func TestOlxAPI_GetOlrFilename(t *testing.T) {
 
 func TestOlxAPI_GetObjGUID(t *testing.T) {
 	api := New()
-	err := api.LoadDataFile(testCase)
+	err := api.LoadDataFile(testCase, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -49,7 +49,7 @@ func TestOlxAPI_GetObjGUID(t *testing.T) {
 
 func TestOlxAPI_GetAreaName(t *testing.T) {
 	api := New()
-	err := api.LoadDataFile(testCase)
+	err := api.LoadDataFile(testCase, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -73,7 +73,7 @@ func TestOlxAPI_GetAreaName(t *testing.T) {
 
 func TestOlxAPI_GetZoneName(t *testing.T) {
 	api := New()
-	err := api.LoadDataFile(testCase)
+	err := api.LoadDataFile(testCase, false)
 	if err != nil {
 		t.Error(err)
 	}

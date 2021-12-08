@@ -910,6 +910,83 @@ func TestClient_NextFault(t *testing.T) {
 	})
 }
 
+func TestClient_SetData(t *testing.T) {
+	c := NewClient()
+	defer c.Release()
+	err := c.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	busHnd, err := c.FindBusByName("TENNESSEE", 132)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = busHnd
+	t.Run("string", func(t *testing.T) {
+		expected := "TESTING"
+		err := c.SetData(busHnd, constants.BUSsName, expected)
+		if err != nil {
+			t.Error(err)
+		}
+
+		err = c.PostData(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+
+		var got string
+		if err := c.GetData(busHnd, constants.BUSsName).Scan(&got); err != nil {
+			t.Error(err)
+		}
+
+		if got != expected {
+			t.Errorf("expected %s, got %s", expected, got)
+		}
+	})
+	t.Run("float64", func(t *testing.T) {
+		expected := 45.0
+		err := c.SetData(busHnd, constants.BUSdSPCx, expected)
+		if err != nil {
+			t.Error(err)
+		}
+
+		err = c.PostData(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+
+		var got float64
+		if err := c.GetData(busHnd, constants.BUSdSPCx).Scan(&got); err != nil {
+			t.Error(err)
+		}
+
+		if got != expected {
+			t.Errorf("expected %f, got %f", expected, got)
+		}
+	})
+	t.Run("int", func(t *testing.T) {
+		expected := 10
+		err := c.SetData(busHnd, constants.BUSnArea, expected)
+		if err != nil {
+			t.Error(err)
+		}
+
+		err = c.PostData(busHnd)
+		if err != nil {
+			t.Error(err)
+		}
+
+		var got int
+		if err := c.GetData(busHnd, constants.BUSnArea).Scan(&got); err != nil {
+			t.Error(err)
+		}
+
+		if got != expected {
+			t.Errorf("expected %d, got %d", expected, got)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {

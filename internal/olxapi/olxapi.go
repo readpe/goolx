@@ -66,10 +66,11 @@ type OlxAPI struct {
 	deleteEquipment   *syscall.Proc
 	equipmentType     *syscall.Proc
 	getData           *syscall.Proc
+	setData           *syscall.Proc
+	postData          *syscall.Proc
 	findBusByName     *syscall.Proc
 	getEquipmentByTag *syscall.Proc
 	findBusNo         *syscall.Proc
-	setData           *syscall.Proc
 	getBusEquipment   *syscall.Proc
 
 	doFault            *syscall.Proc
@@ -128,10 +129,11 @@ func New() *OlxAPI {
 	api.deleteEquipment = api.dll.MustFindProc("OlxAPIDeleteEquipment")
 	api.equipmentType = api.dll.MustFindProc("OlxAPIEquipmentType")
 	api.getData = api.dll.MustFindProc("OlxAPIGetData")
+	api.setData = api.dll.MustFindProc("OlxAPISetDataEx") // OlxAPISetDataEx required for string -> char* support
+	api.postData = api.dll.MustFindProc("OlxAPIPostData")
 	api.findBusByName = api.dll.MustFindProc("OlxAPIFindBusByName")
 	api.getEquipmentByTag = api.dll.MustFindProc("OlxAPIFindEquipmentByTag")
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
-	api.setData = api.dll.MustFindProc("OlxAPISetData")
 	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
@@ -255,7 +257,7 @@ func (o *OlxAPI) VersionInfo() string {
 // SaveDataFile calls the OlxAPISaveDataFile function. Returns error if
 // OLXAPIFailure is returned.
 func (o *OlxAPI) SaveDataFile(name string) error {
-	b, err := utf8NullFromString(name)
+	b, err := UTF8NullFromString(name)
 	if err != nil {
 		return fmt.Errorf("SaveDataFile: %v", err)
 	}
@@ -270,13 +272,17 @@ func (o *OlxAPI) SaveDataFile(name string) error {
 
 // LoadDataFile calls the OlxAPILoadDataFile function. Returns error if
 // OLXAPIFailure is returned.
-func (o *OlxAPI) LoadDataFile(name string) error {
-	b, err := utf8NullFromString(name)
+func (o *OlxAPI) LoadDataFile(name string, readOnly bool) error {
+	b, err := UTF8NullFromString(name)
 	if err != nil {
 		return fmt.Errorf("LoadDataFile: %v", err)
 	}
+	var ro int
+	if readOnly {
+		ro = 1
+	}
 	o.Lock()
-	r, _, _ := o.loadDataFile.Call(uintptr(unsafe.Pointer(&b[0])))
+	r, _, _ := o.loadDataFile.Call(uintptr(unsafe.Pointer(&b[0])), uintptr(ro))
 	o.Unlock()
 	if r == OLXAPIFailure {
 		return ErrOlxAPI{"LoadDataFile", o.ErrorString()}
@@ -305,7 +311,7 @@ func (o *OlxAPI) CloseDataFile() error {
 // ReadChangeFile calls the OlxAPIReadChangeFile function. Returns error if
 // OLXAPIFailure is returned.
 func (o *OlxAPI) ReadChangeFile(name string) error {
-	b, err := utf8NullFromString(name)
+	b, err := UTF8NullFromString(name)
 	if err != nil {
 		return fmt.Errorf("ReadChangeFile: %v", err)
 	}
@@ -373,7 +379,7 @@ func (o *OlxAPI) GetData(hnd, token int, buf []byte) error {
 
 // FindBusByName calls the OlxAPIFindBusByName function.
 func (o *OlxAPI) FindBusByName(name string, kv float64) (int, error) {
-	b, err := utf8NullFromString(name)
+	b, err := UTF8NullFromString(name)
 	if err != nil {
 		return 0, fmt.Errorf("FindBus: %v", err)
 	}
@@ -394,7 +400,7 @@ func (o *OlxAPI) FindBusByName(name string, kv float64) (int, error) {
 
 // FindEquipmentByTag calls the OlxAPIFindEquipmentByTag function.
 func (o *OlxAPI) FindEquipmentByTag(eqType int, hnd *int, tags ...string) error {
-	bTags, err := utf8NullFromString(strings.Join(tags, ","))
+	bTags, err := UTF8NullFromString(strings.Join(tags, ","))
 	if err != nil {
 		return err
 	}
@@ -416,6 +422,28 @@ func (o *OlxAPI) FindBusNo(n int) (int, error) {
 		return 0, ErrOlxAPI{"FundBusNo", o.ErrorString()}
 	}
 	return int(r), nil
+}
+
+// SetData calls the OlxAPISetDataEx function.
+func (o *OlxAPI) SetData(hnd, token int, buf []byte) error {
+	o.Lock()
+	r, _, _ := o.setData.Call(uintptr(hnd), uintptr(token), uintptr(unsafe.Pointer(&buf[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"SetData", o.ErrorString()}
+	}
+	return nil
+}
+
+// PostData calls the OlxAPIPostData function.
+func (o *OlxAPI) PostData(hnd int) error {
+	o.Lock()
+	r, _, _ := o.postData.Call(uintptr(hnd))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"PostData", o.ErrorString()}
+	}
+	return nil
 }
 
 // SetDataInt calls the OlxAPISetData function. Data provided is of type int.
@@ -573,7 +601,7 @@ func (o *OlxAPI) GetObjTags(hnd int) (string, error) {
 
 // SetObjTags calls OlxAPISetObjTags function. Tags are joined into a comma separated string.
 func (o *OlxAPI) SetObjTags(hnd int, tags ...string) error {
-	bTags, err := utf8NullFromString(strings.Join(tags, ","))
+	bTags, err := UTF8NullFromString(strings.Join(tags, ","))
 	if err != nil {
 		return err
 	}
@@ -600,7 +628,7 @@ func (o *OlxAPI) GetObjMemo(hnd int) (string, error) {
 
 // SetObjMemo calls OlxAPISetObjMemo function. Sets the object memo field. Overwrites existing data.
 func (o *OlxAPI) SetObjMemo(hnd int, memo string) error {
-	bMemo, err := utf8NullFromString(memo)
+	bMemo, err := UTF8NullFromString(memo)
 	if err != nil {
 		return err
 	}

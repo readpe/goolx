@@ -14,7 +14,7 @@ import (
 
 // utf8NullFromString returns UTF-8 string with a terminating NUL added.
 // If s contains a NUL byte at any location, it returns (nil, error).
-func utf8NullFromString(s string) ([]byte, error) {
+func UTF8NullFromString(s string) ([]byte, error) {
 	for i := 0; i < len(s); i++ {
 		if s[i] == 0 {
 			return nil, fmt.Errorf("unable to encode string %s to utf-8", s)

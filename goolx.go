@@ -5,6 +5,7 @@
 package goolx
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -79,7 +80,7 @@ func (c *Client) SaveDataFile(name string) error {
 
 // LoadDataFile loads *.olr file from disk
 func (c *Client) LoadDataFile(name string) error {
-	return c.olxAPI.LoadDataFile(name)
+	return c.olxAPI.LoadDataFile(name, false)
 }
 
 // Returns the currently loaded olr filename.
@@ -336,6 +337,52 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("GetData token type not found: %d", token)
 	}
+}
+
+// SetData sets the provided data to the specified equipment parameter as determined by the token value.
+// Only string, float64, and int data is currently supported. PostData must be called after SetData.
+// TODO: Figure out how to set array data fields.
+func (c *Client) SetData(hnd, token int, data interface{}) error {
+	switch d := data.(type) {
+	case string:
+		if token/100 != constants.VTSTRING {
+			return fmt.Errorf("SetData: incorrect data type provided for token %d: %T", token, d)
+		}
+		buf, _ := olxapi.UTF8NullFromString(d)
+		err := c.olxAPI.SetData(hnd, token, buf)
+		if err != nil {
+			return err
+		}
+	case float64:
+		if token/100 != constants.VTDOUBLE {
+			return fmt.Errorf("SetData: incorrect data type provided for token %d: %T", token, d)
+		}
+		var buf = bytes.Buffer{}
+		binary.Write(&buf, binary.LittleEndian, d)
+		err := c.olxAPI.SetData(hnd, token, buf.Bytes())
+		if err != nil {
+			return err
+		}
+	case int:
+		if token/100 != constants.VTINTEGER {
+			return fmt.Errorf("SetData: incorrect data type provided for token %d: %T", token, d)
+		}
+		var buf = bytes.Buffer{}
+		binary.Write(&buf, binary.LittleEndian, int32(d))
+		err := c.olxAPI.SetData(hnd, token, buf.Bytes())
+		if err != nil {
+			return err
+		}
+
+	default:
+		return fmt.Errorf("SetData: data type %T not supported", data)
+	}
+	return nil
+}
+
+// PostData will post data for the provided equipment handle that was previously set using the SetData method.
+func (c *Client) PostData(hnd int) error {
+	return c.olxAPI.PostData(hnd)
 }
 
 // FindBusByName returns the bus handle for the given bus name and kv, if found
