@@ -1045,6 +1045,30 @@ func TestClient_MakeOutageList(t *testing.T) {
 			t.Log(otgs)
 		}
 	})
+	t.Run("Run", func(t *testing.T) {
+		otgs, err := api.MakeOutageList(hnd, 0, OtgLine)
+		if err != nil {
+			t.Error(err)
+		}
+		cfg := NewFaultConfig(
+			FaultCloseInOutage(otgs, OutageOptionOnePer),
+			FaultClearPrev(true),
+			FaultConn(ABC),
+		)
+		err = api.DoFault(hnd, cfg)
+		if err != nil {
+			t.Error(err)
+		}
+		expected := 4
+		var got int
+		flts := api.NextFault(5)
+		for flts.Next() {
+			got++
+		}
+		if expected != got {
+			t.Errorf("expected %d, got %d outages", expected, got)
+		}
+	})
 }
 
 // Examples
