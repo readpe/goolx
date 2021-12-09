@@ -544,7 +544,7 @@ func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt 
 		uintptr(unsafe.Pointer(&fltConn[0])),
 		uintptr(unsafe.Pointer(&fltOpt[0])),
 		uintptr(unsafe.Pointer(&outageOpt[0])),
-		uintptr(unsafe.Pointer(&outageLst)),
+		uintptr(unsafe.Pointer(&outageLst[0])),
 		uintptr(unsafe.Pointer(&fltR322[0])), uintptr(unsafe.Pointer(&fltR322[1])),
 		uintptr(unsafe.Pointer(&fltX322[0])), uintptr(unsafe.Pointer(&fltX322[1])),
 		uintptr(clear),
