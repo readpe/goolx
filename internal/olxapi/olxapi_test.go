@@ -2,11 +2,14 @@ package olxapi
 
 import (
 	"testing"
-
-	"github.com/readpe/goolx/constants"
 )
 
 var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
+
+const (
+	TCBus      = 1
+	TCRLYGroup = 20
+)
 
 func TestOlxAPI_GetOlrFilename(t *testing.T) {
 	api := New()
@@ -108,7 +111,7 @@ func TestOlxAPI_GetRelayTime(t *testing.T) {
 	}
 
 	var hnd int
-	err = api.GetEquipment(constants.TCRLYGroup, &hnd)
+	err = api.GetEquipment(TCRLYGroup, &hnd)
 	if err != nil {
 		t.Error(err)
 	}
@@ -139,7 +142,7 @@ func TestOlxAPI_MakeOutageList(t *testing.T) {
 		var hnd int
 
 		for {
-			err = api.GetEquipment(constants.TCBus, &hnd)
+			err = api.GetEquipment(TCBus, &hnd)
 			if err != nil {
 				break
 			}

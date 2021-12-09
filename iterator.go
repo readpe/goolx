@@ -6,8 +6,6 @@ package goolx
 
 import (
 	"io"
-
-	"github.com/readpe/goolx/constants"
 )
 
 // HandleIterator is a iterator interface for equipment handles.
@@ -187,7 +185,7 @@ func (n *NextFault) Next() bool {
 	}
 	switch n.indx {
 	case 0:
-		n.indx = constants.SFFirst
+		n.indx = SFFirst
 	default:
 		n.indx++
 	}

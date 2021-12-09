@@ -6,7 +6,6 @@ package model
 
 import (
 	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/constants"
 )
 
 // Bus represents a bus equipment data structure. This does not represent all fields from
@@ -26,13 +25,13 @@ type Bus struct {
 // Scanned into a new bus object and returned if no errors.
 func GetBus(c *goolx.Client, hnd int) (*Bus, error) {
 	data := c.GetData(hnd,
-		constants.BUSsName,
-		constants.BUSdKVnominal,
-		constants.BUSnNumber,
-		constants.BUSnArea,
-		constants.BUSnZone,
-		constants.BUSnTapBus,
-		constants.BUSsComment,
+		goolx.BUSsName,
+		goolx.BUSdKVnominal,
+		goolx.BUSnNumber,
+		goolx.BUSnArea,
+		goolx.BUSnZone,
+		goolx.BUSnTapBus,
+		goolx.BUSsComment,
 	)
 
 	// Scan data into bus instance. Similar to sql.Rows.Scan

@@ -9,7 +9,6 @@ import (
 	"log"
 
 	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/constants"
 	"github.com/readpe/goolx/model"
 )
 
@@ -28,7 +27,7 @@ func main() {
 	}
 
 	// Loop through all buses in case using NextEquipment iterator.
-	buses := c.NextEquipment(constants.TCBus)
+	buses := c.NextEquipment(goolx.TCBus)
 	for buses.Next() {
 		hnd := buses.Hnd()
 

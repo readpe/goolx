@@ -10,8 +10,6 @@ import (
 	"os"
 	"path"
 	"testing"
-
-	"github.com/readpe/goolx/constants"
 )
 
 var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
@@ -131,7 +129,7 @@ func TestGetEquipment(t *testing.T) {
 		t.Error(err)
 	}
 	var hnd int
-	err = c.olxAPI.GetEquipment(constants.TCBus, &hnd)
+	err = c.olxAPI.GetEquipment(TCBus, &hnd)
 	if err != nil {
 		t.Error(err)
 	}
@@ -147,7 +145,7 @@ func TestGetEquipmentType(t *testing.T) {
 		t.Error(err)
 	}
 	var hnd int
-	err = c.olxAPI.GetEquipment(constants.TCBus, &hnd)
+	err = c.olxAPI.GetEquipment(TCBus, &hnd)
 	if err != nil {
 		t.Error(err)
 	}
@@ -156,8 +154,8 @@ func TestGetEquipmentType(t *testing.T) {
 		t.Error(err)
 		t.Log(eqType, err)
 	}
-	if eqType != constants.TCBus {
-		t.Errorf("expected eqType %d, got %d", constants.TCBus, eqType)
+	if eqType != TCBus {
+		t.Errorf("expected eqType %d, got %d", TCBus, eqType)
 	}
 	t.Log(err, hnd)
 }
@@ -174,7 +172,7 @@ func TestNextEquipment(t *testing.T) {
 	c := NewClient()
 	defer c.Release()
 	c.LoadDataFile(testCase)
-	hi := c.NextEquipment(constants.TCBus)
+	hi := c.NextEquipment(TCBus)
 	var handles []int
 	for hi.Next() {
 		hnd := hi.Hnd()
@@ -191,12 +189,12 @@ func TestNextBusEquipment(t *testing.T) {
 	c := NewClient()
 	defer c.Release()
 	c.LoadDataFile(testCase)
-	hi := c.NextEquipment(constants.TCBus)
+	hi := c.NextEquipment(TCBus)
 	var handles []int
 	var branches []int
 	for hi.Next() {
 		handles = append(handles, hi.Hnd())
-		brs := c.NextBusEquipment(hi.Hnd(), constants.TCBranch)
+		brs := c.NextBusEquipment(hi.Hnd(), TCBranch)
 		for brs.Next() {
 			branches = append(branches, brs.Hnd())
 		}
@@ -395,7 +393,7 @@ func TestClient_GetData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	xfmrs := c.NextEquipment(constants.TCXFMR)
+	xfmrs := c.NextEquipment(TCXFMR)
 	if !xfmrs.Next() {
 		t.Fatal("could not find transformer")
 	}
@@ -409,91 +407,91 @@ func TestClient_GetData(t *testing.T) {
 		{
 			name:      "BUSsName",
 			handle:    busHnd,
-			token:     constants.BUSsName,
+			token:     BUSsName,
 			wantValue: "TENNESSEE",
 		},
 		{
 			name:      "BUSsLocation",
 			handle:    busHnd,
-			token:     constants.BUSsLocation,
+			token:     BUSsLocation,
 			wantValue: "TENNESSE",
 		},
 		{
 			name:      "BUSsComment",
 			handle:    busHnd,
-			token:     constants.BUSsComment,
+			token:     BUSsComment,
 			wantValue: "",
 		},
 		{
 			name:      "BUSdKVnominal",
 			handle:    busHnd,
-			token:     constants.BUSdKVnominal,
+			token:     BUSdKVnominal,
 			wantValue: 132.00,
 		},
 		{
 			name:      "BUSdKVP",
 			handle:    busHnd,
-			token:     constants.BUSdKVP,
+			token:     BUSdKVP,
 			wantValue: 0.00,
 		},
 		{
 			name:      "BUSdSPCx",
 			handle:    busHnd,
-			token:     constants.BUSdSPCx,
+			token:     BUSdSPCx,
 			wantValue: 0.0,
 		},
 		{
 			name:      "BUSdSPCy",
 			handle:    busHnd,
-			token:     constants.BUSdSPCy,
+			token:     BUSdSPCy,
 			wantValue: 0.0,
 		},
 		{
 			name:      "BUSnNumber",
 			handle:    busHnd,
-			token:     constants.BUSnNumber,
+			token:     BUSnNumber,
 			wantValue: 4,
 		},
 		{
 			name:      "BUSnArea",
 			handle:    busHnd,
-			token:     constants.BUSnArea,
+			token:     BUSnArea,
 			wantValue: 1,
 		},
 		{
 			name:      "BUSnZone",
 			handle:    busHnd,
-			token:     constants.BUSnZone,
+			token:     BUSnZone,
 			wantValue: 1,
 		},
 		{
 			name:      "BUSnTapBus",
 			handle:    busHnd,
-			token:     constants.BUSnTapBus,
+			token:     BUSnTapBus,
 			wantValue: 0,
 		},
 		{
 			name:      "BUSnSubGroup",
 			handle:    busHnd,
-			token:     constants.BUSnSubGroup,
+			token:     BUSnSubGroup,
 			wantValue: 0,
 		},
 		{
 			name:      "BUSnSlack",
 			handle:    busHnd,
-			token:     constants.BUSnSlack,
+			token:     BUSnSlack,
 			wantValue: 0,
 		},
 		{
 			name:      "BUSnVisible",
 			handle:    busHnd,
-			token:     constants.BUSnVisible,
+			token:     BUSnVisible,
 			wantValue: 1,
 		},
 		{
 			name:      "XRsName",
 			handle:    xfmrHnd,
-			token:     constants.XRsName,
+			token:     XRsName,
 			wantValue: "NV-NH",
 		},
 	}
@@ -534,7 +532,7 @@ func TestClient_NextRelay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rlyGroups := c.NextEquipment(constants.TCRLYGroup)
+	rlyGroups := c.NextEquipment(TCRLYGroup)
 	if !rlyGroups.Next() {
 		t.Fatal("could not find relay group")
 	}
@@ -737,7 +735,7 @@ func TestClient_GetSCVoltage(t *testing.T) {
 		}
 	})
 	t.Run("No Fault", func(t *testing.T) {
-		err = c.PickFault(constants.SFFirst, 1)
+		err = c.PickFault(SFFirst, 1)
 		if err == nil {
 			t.Errorf("expected 'PickFault: fault not simulated', got %v", err)
 		}
@@ -751,7 +749,7 @@ func TestClient_GetSCVoltage(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = c.PickFault(constants.SFFirst, 1)
+		err = c.PickFault(SFFirst, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -815,11 +813,11 @@ func TestClient_GetSCCurrent(t *testing.T) {
 		}
 	})
 	t.Run("No Fault", func(t *testing.T) {
-		err = c.PickFault(constants.SFFirst, 1)
+		err = c.PickFault(SFFirst, 1)
 		if err == nil {
 			t.Errorf("expected 'PickFault: fault not simulated', got %v", err)
 		}
-		_, _, _, err := c.GetSCCurrentPhase(constants.HNDSC)
+		_, _, _, err := c.GetSCCurrentPhase(HNDSC)
 		if err == nil {
 			t.Errorf("expected 'GetSCCurrent: fault not simulated', got %v", err)
 		}
@@ -829,11 +827,11 @@ func TestClient_GetSCCurrent(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = c.PickFault(constants.SFFirst, 1)
+		err = c.PickFault(SFFirst, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		ia, ib, ic, err := c.GetSCCurrentPhase(constants.HNDSC)
+		ia, ib, ic, err := c.GetSCCurrentPhase(HNDSC)
 		if err != nil {
 			t.Error(err)
 		}
@@ -853,7 +851,7 @@ func TestClient_GetSCCurrent(t *testing.T) {
 			t.Errorf("expected %q, got %q", expected, got)
 		}
 
-		i0, i1, i2, err := c.GetSCCurrentSeq(constants.HNDSC)
+		i0, i1, i2, err := c.GetSCCurrentSeq(HNDSC)
 		if err != nil {
 			t.Error(err)
 		}
@@ -924,7 +922,7 @@ func TestClient_SetData(t *testing.T) {
 	_ = busHnd
 	t.Run("string", func(t *testing.T) {
 		expected := "TESTING"
-		err := c.SetData(busHnd, constants.BUSsName, expected)
+		err := c.SetData(busHnd, BUSsName, expected)
 		if err != nil {
 			t.Error(err)
 		}
@@ -935,7 +933,7 @@ func TestClient_SetData(t *testing.T) {
 		}
 
 		var got string
-		if err := c.GetData(busHnd, constants.BUSsName).Scan(&got); err != nil {
+		if err := c.GetData(busHnd, BUSsName).Scan(&got); err != nil {
 			t.Error(err)
 		}
 
@@ -945,7 +943,7 @@ func TestClient_SetData(t *testing.T) {
 	})
 	t.Run("float64", func(t *testing.T) {
 		expected := 45.0
-		err := c.SetData(busHnd, constants.BUSdSPCx, expected)
+		err := c.SetData(busHnd, BUSdSPCx, expected)
 		if err != nil {
 			t.Error(err)
 		}
@@ -956,7 +954,7 @@ func TestClient_SetData(t *testing.T) {
 		}
 
 		var got float64
-		if err := c.GetData(busHnd, constants.BUSdSPCx).Scan(&got); err != nil {
+		if err := c.GetData(busHnd, BUSdSPCx).Scan(&got); err != nil {
 			t.Error(err)
 		}
 
@@ -966,7 +964,7 @@ func TestClient_SetData(t *testing.T) {
 	})
 	t.Run("int", func(t *testing.T) {
 		expected := 10
-		err := c.SetData(busHnd, constants.BUSnArea, expected)
+		err := c.SetData(busHnd, BUSnArea, expected)
 		if err != nil {
 			t.Error(err)
 		}
@@ -977,7 +975,7 @@ func TestClient_SetData(t *testing.T) {
 		}
 
 		var got int
-		if err := c.GetData(busHnd, constants.BUSnArea).Scan(&got); err != nil {
+		if err := c.GetData(busHnd, BUSnArea).Scan(&got); err != nil {
 			t.Error(err)
 		}
 
@@ -1110,7 +1108,7 @@ func ExampleData_Scan() {
 	}
 
 	// Get bus name and kv data.
-	data := api.GetData(busHnd, constants.BUSsName, constants.BUSdKVnominal)
+	data := api.GetData(busHnd, BUSsName, BUSdKVnominal)
 
 	// Scan loads the data into the pointers provided. Types must match the tokens provided.
 	var name string
@@ -1135,7 +1133,7 @@ func TestClient_GetRelayTime(t *testing.T) {
 	}
 
 	t.Run("Okay", func(t *testing.T) {
-		rlyGroups := api.NextEquipment(constants.TCRLYGroup)
+		rlyGroups := api.NextEquipment(TCRLYGroup)
 		for rlyGroups.Next() {
 			rgHnd := rlyGroups.Hnd()
 
@@ -1148,7 +1146,7 @@ func TestClient_GetRelayTime(t *testing.T) {
 			for relays.Next() {
 				rlyHnd := relays.Hnd()
 				var rid string
-				if err := api.GetData(rlyHnd, constants.RDsID).Scan(&rid); err != nil {
+				if err := api.GetData(rlyHnd, RDsID).Scan(&rid); err != nil {
 					t.Error(err)
 				}
 				faults := api.NextFault(5)

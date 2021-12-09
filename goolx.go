@@ -13,7 +13,6 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/readpe/goolx/constants"
 	"github.com/readpe/goolx/internal/olxapi"
 )
 
@@ -239,7 +238,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 	switch token / 100 {
 
-	case constants.VTSTRING:
+	case VTSTRING:
 		// string
 		buf := make([]byte, 10*KiB) // 10 KiB buffer for string data null terminated
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -250,7 +249,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		s := olxapi.UTF8NullToString(buf)
 		return s, nil
 
-	case constants.VTDOUBLE:
+	case VTDOUBLE:
 		// double
 		buf := make([]byte, 8) // 64 bit (8 byte) float64 buffer, equivalent to C Double
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -261,7 +260,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		f := math.Float64frombits(binary.LittleEndian.Uint64(buf))
 		return f, nil
 
-	case constants.VTINTEGER:
+	case VTINTEGER:
 		// integers
 		buf := make([]byte, 4) // 32 bit (4 byte) int32 buffer
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -273,7 +272,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 		return i, nil
 
-	case constants.VTARRAYSTRING:
+	case VTARRAYSTRING:
 		// string array
 		buf := make([]byte, 10*KiB) // 10 KiB buffer
 		err := c.olxAPI.GetData(hnd, token, buf)
@@ -286,11 +285,11 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 
 		return sa, nil
 
-	case constants.VTARRAYINT:
+	case VTARRAYINT:
 		// array length depends on token
 		var length int
 
-		length, ok := constants.ArrayLengths[eqType][token]
+		length, ok := ArrayLengths[eqType][token]
 		if !ok {
 			return nil, fmt.Errorf("array length not found for equipment type: %v; token: %v", eqType, token)
 		}
@@ -310,11 +309,11 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 		// returning []int
 		return data, nil
 
-	case constants.VTARRAYDOUBLE:
+	case VTARRAYDOUBLE:
 		// array length depends on token
 		var length int
 
-		length, ok := constants.ArrayLengths[eqType][token]
+		length, ok := ArrayLengths[eqType][token]
 		if !ok {
 			return nil, fmt.Errorf("array length not found for equipment type: %v; token: %v", eqType, token)
 		}
@@ -345,7 +344,7 @@ func (c *Client) getData(hnd, token int) (interface{}, error) {
 func (c *Client) SetData(hnd, token int, data interface{}) error {
 	switch d := data.(type) {
 	case string:
-		if token/100 != constants.VTSTRING {
+		if token/100 != VTSTRING {
 			return fmt.Errorf("SetData: incorrect data type provided for token %d: %T", token, d)
 		}
 		buf, _ := olxapi.UTF8NullFromString(d)
@@ -354,7 +353,7 @@ func (c *Client) SetData(hnd, token int, data interface{}) error {
 			return err
 		}
 	case float64:
-		if token/100 != constants.VTDOUBLE {
+		if token/100 != VTDOUBLE {
 			return fmt.Errorf("SetData: incorrect data type provided for token %d: %T", token, d)
 		}
 		var buf = bytes.Buffer{}
@@ -364,7 +363,7 @@ func (c *Client) SetData(hnd, token int, data interface{}) error {
 			return err
 		}
 	case int:
-		if token/100 != constants.VTINTEGER {
+		if token/100 != VTINTEGER {
 			return fmt.Errorf("SetData: incorrect data type provided for token %d: %T", token, d)
 		}
 		var buf = bytes.Buffer{}
