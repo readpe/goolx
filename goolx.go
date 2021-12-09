@@ -404,6 +404,25 @@ func (c *Client) FindBusNo(n int) (int, error) {
 	return c.olxAPI.FindBusNo(n)
 }
 
+// OtgTypeMask represents a bit mask for use with the MakeOutageList to provide
+// the desired outage type code, bitwise or the desired codes.
+type OtgTypeMask uint8
+
+// Outage type bit masks.
+const (
+	OtgLine OtgTypeMask = 1 << iota
+	OtgXfmr
+	OtgPhaseShift
+	OtgXfmr3
+	OtgSwitch
+)
+
+// MakeOutageList creates an outage list for use in the DoFault fault simulation
+// analysis. Select the outaged branch types by bitwise or of OtgTypeMask's.
+func (c *Client) MakeOutageList(hnd, tiers int, otgType OtgTypeMask) ([]int, error) {
+	return c.olxAPI.MakeOutageList(hnd, tiers, int(otgType))
+}
+
 // DoFault runs a fault for the given equipment handle with the providedfault configurations.
 // PickFault or NextFault must be called prior to accessing results data.
 func (c *Client) DoFault(hnd int, config *FaultConfig) error {

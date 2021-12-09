@@ -73,6 +73,7 @@ type OlxAPI struct {
 	findBusNo         *syscall.Proc
 	getBusEquipment   *syscall.Proc
 
+	makeOutageList     *syscall.Proc
 	doFault            *syscall.Proc
 	faultDescriptionEx *syscall.Proc
 	doSteppedEvent     *syscall.Proc
@@ -136,6 +137,7 @@ func New() *OlxAPI {
 	api.getEquipmentByTag = api.dll.MustFindProc("OlxAPIFindEquipmentByTag")
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
 	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
+	api.makeOutageList = api.dll.MustFindProc("OlxAPIMakeOutageList")
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
 	api.doSteppedEvent = api.dll.MustFindProc("OlxAPIDoSteppedEvent")
@@ -485,6 +487,41 @@ func (o *OlxAPI) GetBusEquipment(busHnd, eqType int, hnd *int) error {
 		return ErrOlxAPI{"GetBusEquipment", o.ErrorString()}
 	}
 	return nil
+}
+
+func (o *OlxAPI) MakeOutageList(hnd, tiers, brType int) ([]int, error) {
+	var otgs = make([]int, 20)
+	var otgsLen int
+	// Passing nil pointer for otgs list on first call to get the list length, then second call populates.
+	// pyOlxAPI says to pass "none", nil pointer appears to work for Go...
+	// https://github.com/aspeninc/pyOlxAPI/blob/4fb83aea7ca909b2c1534af018eade0fe7b17205/Python/OlxAPI.py#L1224
+	o.Lock()
+
+	r, _, _ := o.makeOutageList.Call(
+		uintptr(hnd),
+		uintptr(tiers),
+		uintptr(brType),
+		uintptr(unsafe.Pointer(nil)),
+		uintptr(unsafe.Pointer(&otgsLen)),
+	)
+	if r == OLXAPIFailure {
+		return otgs, ErrOlxAPI{"MakeOutageList", o.ErrorString()}
+	}
+
+	otgs = make([]int, otgsLen+1)
+	r, _, _ = o.makeOutageList.Call(
+		uintptr(hnd),
+		uintptr(tiers),
+		uintptr(brType),
+		uintptr(unsafe.Pointer(&otgs[0])),
+		uintptr(unsafe.Pointer(&otgsLen)),
+	)
+	if r == OLXAPIFailure {
+		return otgs, ErrOlxAPI{"MakeOutageList", o.ErrorString()}
+	}
+
+	o.Unlock()
+	return otgs, nil
 }
 
 func (o *OlxAPI) DoFault(hnd int, fltConn [4]int, fltOpt [15]float64, outageOpt [4]int, outageLst []int, fltR, fltX float64, clearPrev bool) error {

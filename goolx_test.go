@@ -987,6 +987,66 @@ func TestClient_SetData(t *testing.T) {
 	})
 }
 
+func TestClient_MakeOutageList(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	err := api.LoadDataFile(testCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hnd, err := api.FindBusByName("NEVADA", 132.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("Okay", func(t *testing.T) {
+		otgs, err := api.MakeOutageList(hnd, 0, OtgLine)
+		if err != nil {
+			t.Error(err)
+		}
+		expected := 4 + 1
+		got := len(otgs)
+		if expected != got {
+			t.Errorf("expected %d, got %d outages", expected, got)
+			t.Log(otgs)
+		}
+
+		otgs, err = api.MakeOutageList(hnd, 0, OtgLine|OtgPhaseShift)
+		if err != nil {
+			t.Error(err)
+		}
+		expected = 5 + 1
+		got = len(otgs)
+		if expected != got {
+			t.Errorf("expected %d, got %d outages", expected, got)
+			t.Log(otgs)
+		}
+
+		otgs, err = api.MakeOutageList(hnd, 0, OtgLine|OtgPhaseShift|OtgXfmr)
+		if err != nil {
+			t.Error(err)
+		}
+		expected = 6 + 1
+		got = len(otgs)
+		if expected != got {
+			t.Errorf("expected %d, got %d outages", expected, got)
+			t.Log(otgs)
+		}
+
+		otgs, err = api.MakeOutageList(hnd, 0, OtgLine|OtgPhaseShift|OtgXfmr|OtgXfmr3)
+		if err != nil {
+			t.Error(err)
+		}
+		expected = 7 + 1
+		got = len(otgs)
+		if expected != got {
+			t.Errorf("expected %d, got %d outages", expected, got)
+			t.Log(otgs)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {

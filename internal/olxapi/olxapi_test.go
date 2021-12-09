@@ -125,5 +125,33 @@ func TestOlxAPI_GetRelayTime(t *testing.T) {
 			t.Log(hnd, rlyHnd, opTime, opText)
 		}
 	})
+}
 
+func TestOlxAPI_MakeOutageList(t *testing.T) {
+	api := New()
+	defer api.Release()
+	err := api.LoadDataFile(testCase, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Run("Okay", func(t *testing.T) {
+		var hnd int
+
+		for {
+			err = api.GetEquipment(constants.TCBus, &hnd)
+			if err != nil {
+				break
+			}
+			otgs, err := api.MakeOutageList(hnd, 9, 1)
+			if err != nil {
+				t.Error(err)
+			}
+			if otgs[len(otgs)-1] != 0 {
+				t.Errorf("outage list not zero terminated")
+				t.Log(hnd, otgs)
+			}
+		}
+
+	})
 }
