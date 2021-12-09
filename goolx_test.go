@@ -1071,6 +1071,31 @@ func TestClient_MakeOutageList(t *testing.T) {
 	})
 }
 
+func TestClient_GetObjGUID(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase); err != nil {
+		t.Error(err)
+	}
+
+	hnd, err := api.FindBusByName("NEVADA", 132.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Okay", func(t *testing.T) {
+		got, err := api.GetGUID(hnd)
+		if err != nil {
+			t.Error(err)
+		}
+		expected := "{ad5860b5-f146-4dd5-9a11-5aadf06d907b}"
+		if expected != got {
+			t.Errorf("expected %q, got %q", expected, got)
+		}
+	})
+}
+
 // Examples
 
 func ExampleData_Scan() {
