@@ -89,9 +89,10 @@ type OlxAPI struct {
 	getAreaName *syscall.Proc
 	getZoneName *syscall.Proc
 
-	pickFault    *syscall.Proc
-	getSCVoltage *syscall.Proc
-	getSCCurrent *syscall.Proc
+	pickFault      *syscall.Proc
+	getSCVoltage   *syscall.Proc
+	getSCCurrent   *syscall.Proc
+	run1LPFCommand *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -154,6 +155,7 @@ func New() *OlxAPI {
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
 	api.getSCVoltage = api.dll.MustFindProc("OlxAPIGetSCVoltage")
 	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetSCCurrent")
+	api.run1LPFCommand = api.dll.MustFindProc("OlxAPIRun1LPFCommand")
 
 	return api
 }
@@ -827,4 +829,19 @@ func (o *OlxAPI) GetSCCurrent(hnd, styleCode int) (vdOut1 [12]float64, vdOut2 [1
 		return vdOut1, vdOut2, ErrOlxAPI{"GetSCCurrent", o.ErrorString()}
 	}
 	return vdOut1, vdOut2, nil
+}
+
+// Run1LPFCommand runs the Oneliner command using xml input string. See Oneliner documentation for xml format specifications.
+func (o *OlxAPI) Run1LPFCommand(s string) error {
+	b, err := UTF8NullFromString(s)
+	if err != nil {
+		return err
+	}
+	o.Lock()
+	r, _, _ := o.run1LPFCommand.Call(uintptr(unsafe.Pointer(&b[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"Run1LPFCommand", o.ErrorString()}
+	}
+	return nil
 }
