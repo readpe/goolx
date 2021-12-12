@@ -159,3 +159,25 @@ func TestOlxAPI_MakeOutageList(t *testing.T) {
 
 	})
 }
+
+func TestOlxAPI_GetLogicScheme(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Okay", func(t *testing.T) {
+		var rlyGrpHnd int
+		if err := api.GetEquipment(TCRLYGroup, &rlyGrpHnd); err != nil {
+			t.Fatal(err)
+		}
+
+		var logicHnd int
+		if err := api.GetLogicScheme(rlyGrpHnd, &logicHnd); err == nil {
+			t.Errorf("expected 'GetRelay failure: scheme is empty', got %v", err)
+		}
+	})
+
+}

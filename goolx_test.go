@@ -887,7 +887,7 @@ func TestClient_NextFault(t *testing.T) {
 	t.Run("No Fault", func(t *testing.T) {
 		faults := c.NextFault(5)
 		for faults.Next() {
-			t.Log(faults.Indx(), c.FaultDescription(faults.Indx()))
+			t.Log(faults.Index(), c.FaultDescription(faults.Index()))
 		}
 	})
 	t.Run("Faults", func(t *testing.T) {
@@ -898,7 +898,7 @@ func TestClient_NextFault(t *testing.T) {
 		var got []int
 		faults := c.NextFault(5)
 		for faults.Next() {
-			got = append(got, faults.Indx())
+			got = append(got, faults.Index())
 		}
 		expectedLen := 3
 		gotLen := len(got)
@@ -1152,7 +1152,7 @@ func TestClient_GetRelayTime(t *testing.T) {
 				}
 				faults := api.NextFault(5)
 				for faults.Next() {
-					idx := faults.Indx()
+					idx := faults.Index()
 					fd := api.FaultDescription(idx)
 					opTime, opText, err := api.GetRelayTime(rlyHnd, 1, true)
 					if err != nil {
@@ -1182,4 +1182,22 @@ func TestClient_GetRelayTime(t *testing.T) {
 		}
 	})
 
+}
+
+func TestClient_Nextlogicscheme(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(`C:\Users\rpe\Desktop\SAMPLE09.OLR`); err != nil {
+		t.Fatal(err)
+	}
+
+	for rg := api.NextEquipment(TCRLYGroup); rg.Next(); {
+		for l := api.NextLogicScheme(rg.Hnd()); l.Next(); {
+			var lsID string
+			if err := api.GetData(l.Hnd(), LSsID).Scan(&lsID); err != nil {
+				t.Error(err)
+			}
+		}
+	}
 }

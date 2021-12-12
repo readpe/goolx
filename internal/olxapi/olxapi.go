@@ -80,6 +80,7 @@ type OlxAPI struct {
 	getSteppedEvent    *syscall.Proc
 	getRelay           *syscall.Proc
 	getRelayTime       *syscall.Proc
+	getLogicScheme     *syscall.Proc
 
 	getObjTags  *syscall.Proc
 	setObjTags  *syscall.Proc
@@ -145,6 +146,7 @@ func New() *OlxAPI {
 	api.getSteppedEvent = api.dll.MustFindProc("OlxAPIGetSteppedEvent")
 	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
 	api.getRelayTime = api.dll.MustFindProc("OlxAPIGetRelayTime")
+	api.getLogicScheme = api.dll.MustFindProc("OlxAPIGetLogicScheme")
 	api.getObjTags = api.dll.MustFindProc("OlxAPIGetObjTags")
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
 	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
@@ -656,6 +658,23 @@ func (o *OlxAPI) GetRelayTime(rlyHnd int, mult float64, tripOnly bool) (float64,
 	opTime := math.Float64frombits(binary.LittleEndian.Uint64(bufTime))
 	opText := UTF8NullToString(bufOpText)
 	return opTime, opText, nil
+}
+
+// GetLogicScheme calls the OlxAPILogicScheme function. Returns
+// the logic scheme handle. Returns an error if OLXAPIFailure
+// is returned. Returns io.EOF error when iteration is exhausted.
+func (o *OlxAPI) GetLogicScheme(rlyGroupHnd int, hnd *int) error {
+	o.Lock()
+	r, _, _ := o.getLogicScheme.Call(uintptr(rlyGroupHnd), uintptr(unsafe.Pointer(hnd)))
+	o.Unlock()
+	switch int(r) {
+	case -1:
+		// OlxAPI returns -1 when GetLogicScheme is exhausted, returning EOF error.
+		return io.EOF
+	case OLXAPIFailure:
+		return ErrOlxAPI{"GetLogicScheme", o.ErrorString()}
+	}
+	return nil
 }
 
 // GetObjTags calls OlxAPIGetObjTags function. Returns a string of comma separated tags.

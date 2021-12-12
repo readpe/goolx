@@ -4,267 +4,96 @@
 
 package goolx
 
-import (
-	"io"
-)
-
 // HandleIterator is a iterator interface for equipment handles.
 type HandleIterator interface {
 	Next() bool
 	Hnd() int
 }
 
-// NextEquipment is an equipment handle iterator for getting
-// the next equipment handle of the provided type. The Next() method
-// will retrieve the next handle if available and populate it for access
-// by Hnd(). If Next() returns false, then there was an error or the list
-// was exhausted. Once the iterator is exhausted it cannot be reused.
-type NextEquipment struct {
-	c      *Client
-	eqType int
-	hnd    int
-	done   bool
-	err    error
+type handleIterator struct {
+	hnd  int
+	done bool
+	f    func(hnd *int) error
 }
 
-// Next retrieves the next equipment handle of type. Returns
-// true if successful, and false if not. Hnd() should not be used
-// if Next() is false. This can be used in for loops.
-func (n *NextEquipment) Next() bool {
-	if n.done {
+// Next advances to the next available handle, returns false if iteration exhausted.
+func (h *handleIterator) Next() bool {
+	if h.done {
 		return false
 	}
-	err := n.c.olxAPI.GetEquipment(n.eqType, &n.hnd)
-	if err != nil {
-		n.done = true
-		if err == io.EOF {
-			// EOF is not an error, so don't set n.err = err.
-			return false
-		}
-		n.err = err
-	}
-	return true
-}
-
-// Hnd returns the current equipment handle, Next() must be called first.
-func (n *NextEquipment) Hnd() int {
-	return n.hnd
-}
-
-// NextBusEquipment is an equipment handle iterator for getting
-// the next equipment handle of the provided type at the specified bus. The Next() method
-// will retrieve the next handle if available and populate it for access
-// by Hnd(). If Next() returns false, then there was an error or the list
-// was exhausted. Once the iterator is exhausted it cannot be reused.
-type NextBusEquipment struct {
-	c      *Client
-	busHnd int
-	eqType int
-	hnd    int
-	done   bool
-	err    error
-}
-
-// Next retrieves the next equipment handle of type at the specified bus. Returns
-// true if successful, and false if not. Hnd() should not be used
-// if Next() is false. This can be used in for loops.
-func (n *NextBusEquipment) Next() bool {
-	if n.done {
-		return false
-	}
-	err := n.c.olxAPI.GetBusEquipment(n.busHnd, n.eqType, &n.hnd)
-	if err != nil {
-		n.done = true
-		if err == io.EOF {
-			// EOF is not an error, so don't set n.err = err.
-			return false
-		}
-		n.err = err
-	}
-	return true
-}
-
-// Hnd returns the current equipment handle, Next() must be called first.
-func (n *NextBusEquipment) Hnd() int {
-	return n.hnd
-}
-
-// NextEquipmentByTag is an equipment handle iterator for getting
-// the next equipment handle of the provided type with the listed tags. The Next() method
-// will retrieve the next handle if available and populate it for access
-// by Hnd(). If Next() returns false, then there was an error or the list
-// was exhausted. Once the iterator is exhausted it cannot be reused.
-type NextEquipmentByTag struct {
-	c      *Client
-	eqType int
-	tags   []string
-	hnd    int
-	err    error
-}
-
-// Next retrieves the next equipment handle of type. Returns
-// true if successful, and false if not. Hnd() should not be used
-// if Next() is false. This can be used in for loops.
-func (n *NextEquipmentByTag) Next() bool {
-	if n.err != nil {
-		return false
-	}
-	err := n.c.olxAPI.FindEquipmentByTag(n.eqType, &n.hnd, n.tags...)
-	if err != nil {
-		n.hnd, n.err = 0, err
+	if err := h.f(&h.hnd); err != nil {
+		h.done = true
 		return false
 	}
 	return true
 }
 
-// Hnd returns the current equipment handle, Next() must be called first.
-func (n *NextEquipmentByTag) Hnd() int {
-	return n.hnd
+// Hnd returns the currently selected equipment handle.
+func (h *handleIterator) Hnd() int {
+	return h.hnd
 }
 
-// NextRelay is an handle iterator for getting
-// the next relay handle in the provided relay group. The Next() method
-// will retrieve the next handle if available and populate it for access
-// by Hnd(). If Next() returns false, then there was an error or the list
-// was exhausted. Once the iterator is exhausted it cannot be reused.
-type NextRelay struct {
-	c           *Client
-	rlyGroupHnd int
-	hnd         int
-	done        bool
-	err         error
-}
-
-// Next retrieves the next relay handle int he relay group. Returns
-// true if successful, and false if not. Hnd() should not be used
-// if Next() is false. This can be used in for loops.
-func (n *NextRelay) Next() bool {
-	if n.done {
-		return false
-	}
-	err := n.c.olxAPI.GetRelay(n.rlyGroupHnd, &n.hnd)
-	if err != nil {
-		n.done = true
-		if err == io.EOF {
-			// EOF is not an error, so don't set n.err = err.
-			return false
-		}
-		n.err = err
-		return false
-	}
-	return true
-}
-
-// Hnd returns the current relay handle, Next() must be called first.
-func (n *NextRelay) Hnd() int {
-	return n.hnd
-}
-
-// FaultIterator is a iterator interface for fault results.
+// FaultIterator is a fault result iterator for iterating through the available fault results,
+// utilizing the PickFault function.
 type FaultIterator interface {
 	Next() bool
-	Indx() int
-	Reset()
+	Index() int
 }
 
-// NextFault is a fault iterator for iterating through the available fault results,
-// utilizing the PickFault function.
-// Iterator may be reused after calling Reset method.
-type NextFault struct {
-	c     *Client
-	indx  int
-	tiers int
-	done  bool
-	err   error
-}
-
-// Next picks the next fault using PickFault function. Returns true if successfull.
-func (n *NextFault) Next() bool {
-	if n.done {
-		return false
-	}
-	switch n.indx {
-	case 0:
-		n.indx = SFFirst
-	default:
-		n.indx++
-	}
-	err := n.c.PickFault(n.indx, n.tiers)
-	if err != nil {
-		n.done = true
-		switch err {
-		case io.EOF:
-			// EOF is not an error, so don't set n.err = err.
-			n.err = nil
-		default:
-			n.err = err
-		}
-		return false
-	}
-	return true
-}
-
-// Indx returns the current picked fault index. Must only be called following a successful call to
-// the Next method.
-func (n *NextFault) Indx() int {
-	return n.indx
-}
-
-// Reset resets the NextFault iterator for reuse.
-func (n *NextFault) Reset() {
-	n.indx = 0
-}
-
-// NextSteppedEvent is a stepped event result iterator for iterating through the available fault results,
-// utilizing the GetSteppedEvent function.
-// Iterator may be reused after calling Reset method.
-type NextSteppedEvent struct {
-	c    *Client
-	step int
-	data SteppedEvent
+type faultIterator struct {
+	i    int
 	done bool
-	err  error
+	f    func(idx *int) error
 }
 
-// Next picks the next fault using GetSteppedEvent function. Returns true if successfull.
-func (n *NextSteppedEvent) Next() bool {
-	if n.done {
+// Next advances to the next fault available.
+func (f *faultIterator) Next() bool {
+	if f.done {
 		return false
 	}
-	switch n.step {
-	case 0:
-		n.step = 1
-	default:
-		n.step++
-	}
-	data, err := n.c.GetSteppedEvent(n.step)
-	if err != nil {
-		n.done = true
-		switch err {
-		case io.EOF:
-			// EOF is not an error, so don't set n.err = err.
-			n.err = nil
-		default:
-			n.err = err
-		}
+
+	if err := f.f(&f.i); err != nil {
+		f.done = true
 		return false
 	}
-	n.data = data
+
 	return true
 }
 
-// Indx returns the current stepped event step index. Must only be called following a successful call to
-// the Next method.
-func (n *NextSteppedEvent) Indx() int {
-	return n.step
+// Index returns the index number of the currently selected fault.
+func (f *faultIterator) Index() int {
+	return f.i
 }
 
-// Data returns the underlying SteppedEvent data, must follow a successfull call to the Next method.
-func (n *NextSteppedEvent) Data() SteppedEvent {
-	return n.data
+// SteppedEventIterator is a stepped event result iterator for iterating through the available fault results,
+// utilizing the GetSteppedEvent function.
+type SteppedEventIterator interface {
+	Next() bool
+	Data() SteppedEvent
 }
 
-// Reset resets the NextSteppedEvent iterator for reuse.
-func (n *NextSteppedEvent) Reset() {
-	n.step = 0
+type steppedEventIterator struct {
+	step int
+	done bool
+	data SteppedEvent
+	f    func(step *int) (SteppedEvent, error)
+}
+
+// Next retrieves the next step available in the stepped event result. If no step is available, returns false.
+func (s *steppedEventIterator) Next() bool {
+	if s.done {
+		return false
+	}
+	data, err := s.f(&s.step)
+	if err != nil {
+		s.done = true
+		return false
+	}
+	s.data = data
+	return true
+}
+
+// Data returns the current step data for the stepped event.
+func (s *steppedEventIterator) Data() SteppedEvent {
+	return s.data
 }

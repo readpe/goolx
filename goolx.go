@@ -108,14 +108,22 @@ func (c *Client) DeleteEquipment(hnd int) error {
 // should be taken when using handle across functions or applications. It is recommended to use the handle
 // immediately after retrieving to get unique equipment identifiers.
 func (c *Client) NextEquipment(eqType int) HandleIterator {
-	return &NextEquipment{c: c, eqType: eqType}
+	return &handleIterator{
+		f: func(hnd *int) error {
+			return c.olxAPI.GetEquipment(eqType, hnd)
+		},
+	}
 }
 
 // NextBusEquipment returns an EquipmentIterator type. The EquipmentIterator will loop through all
 // equipment handles at the provided bus in the case until it reaches the end. This is done using the Next() and Hnd() methods.
 // See NextEquipment for more details.
 func (c *Client) NextBusEquipment(busHnd, eqType int) HandleIterator {
-	return &NextBusEquipment{c: c, busHnd: busHnd, eqType: eqType}
+	return &handleIterator{
+		f: func(hnd *int) error {
+			return c.olxAPI.GetBusEquipment(busHnd, eqType, hnd)
+		},
+	}
 }
 
 // EquipmentType returns the equipment type code for the equipment with the provided handle
@@ -391,10 +399,10 @@ func (c *Client) FindBusByName(name string, kv float64) (int, error) {
 
 // NextEquipmentByTag returns a NextEquipmentTag type which satisfies the HandleIterator interface.
 func (c *Client) NextEquipmentByTag(eqType int, tags ...string) HandleIterator {
-	return &NextEquipmentByTag{
-		c:      c,
-		eqType: eqType,
-		tags:   tags,
+	return &handleIterator{
+		f: func(hnd *int) error {
+			return c.olxAPI.FindEquipmentByTag(eqType, hnd, tags...)
+		},
 	}
 }
 
@@ -469,8 +477,17 @@ func (c *Client) GetSteppedEvent(step int) (SteppedEvent, error) {
 	}, nil
 }
 
-func (c *Client) NextSteppedEvent() *NextSteppedEvent {
-	return &NextSteppedEvent{c: c}
+func (c *Client) NextSteppedEvent() SteppedEventIterator {
+	return &steppedEventIterator{
+		f: func(step *int) (SteppedEvent, error) {
+			*step++
+			se, err := c.GetSteppedEvent(*step)
+			if err != nil {
+				return se, err
+			}
+			return se, nil
+		},
+	}
 }
 
 // NextRelay returns an HandleIterator type. The HandleIterator will loop through all
@@ -479,7 +496,11 @@ func (c *Client) NextSteppedEvent() *NextSteppedEvent {
 // should be taken when using handle across functions or applications. It is recommended to use the handle
 // immediately after retrieving to get unique equipment identifiers.
 func (c *Client) NextRelay(rlyGroupHnd int) HandleIterator {
-	return &NextRelay{c: c, rlyGroupHnd: rlyGroupHnd}
+	return &handleIterator{
+		f: func(hnd *int) error {
+			return c.olxAPI.GetRelay(rlyGroupHnd, hnd)
+		},
+	}
 }
 
 // GetRelayTime returns the relay operation time and operation text for the specified relay. TripOnly will only consider tripping relays if true.
@@ -490,6 +511,16 @@ func (c *Client) GetRelayTime(rlyHnd int, mult float64, tripOnly bool) (float64,
 		return 0, "", fmt.Errorf("GetRelayTime: mult factor should be greater than 0")
 	}
 	return c.olxAPI.GetRelayTime(rlyHnd, mult, tripOnly)
+}
+
+// NextLogicScheme returns the next Logic Scheme handle available in the provided relay group.
+// Utilize the Next() method to loop through the available handles. The Hnd() method returns the selected handle.
+func (c *Client) NextLogicScheme(rlyGroupHnd int) HandleIterator {
+	return &handleIterator{
+		f: func(hnd *int) error {
+			return c.olxAPI.GetLogicScheme(rlyGroupHnd, hnd)
+		},
+	}
 }
 
 // TagsGet returns a slice of tag strings for the equipment with the provided handle.
@@ -617,9 +648,11 @@ func (c *Client) PickFault(indx, tiers int) error {
 // NextFault returns a fault index iterator for looping through fault results. Will perform a PickFault function
 // call for each fault simulation result.
 func (c *Client) NextFault(tiers int) FaultIterator {
-	return &NextFault{
-		c:     c,
-		tiers: tiers,
+	return &faultIterator{
+		f: func(i *int) error {
+			*i++
+			return c.olxAPI.PickFault(*i, tiers)
+		},
 	}
 }
 
