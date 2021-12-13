@@ -82,13 +82,14 @@ type OlxAPI struct {
 	getRelayTime       *syscall.Proc
 	getLogicScheme     *syscall.Proc
 
-	getObjTags  *syscall.Proc
-	setObjTags  *syscall.Proc
-	getObjMemo  *syscall.Proc
-	setObjMemo  *syscall.Proc
-	getObjGUID  *syscall.Proc
-	getAreaName *syscall.Proc
-	getZoneName *syscall.Proc
+	getObjTags          *syscall.Proc
+	setObjTags          *syscall.Proc
+	getObjMemo          *syscall.Proc
+	setObjMemo          *syscall.Proc
+	getObjGUID          *syscall.Proc
+	getObjJournalRecord *syscall.Proc
+	getAreaName         *syscall.Proc
+	getZoneName         *syscall.Proc
 
 	pickFault      *syscall.Proc
 	getSCVoltage   *syscall.Proc
@@ -156,6 +157,7 @@ func New() *OlxAPI {
 	api.getObjMemo = api.dll.MustFindProc("OlxAPIGetObjMemo")
 	api.setObjMemo = api.dll.MustFindProc("OlxAPISetObjMemo")
 	api.getObjGUID = api.dll.MustFindProc("OlxAPIGetObjGUID")
+	api.getObjJournalRecord = api.dll.MustFindProc("OlxAPIGetObjJournalRecord")
 	api.getAreaName = api.dll.MustFindProc("OlxAPIGetAreaName")
 	api.getZoneName = api.dll.MustFindProc("OlxAPIGetZoneName")
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
@@ -748,6 +750,14 @@ func (o *OlxAPI) GetObjGUID(hnd int) (string, error) {
 		return "", ErrOlxAPI{"GetObjGUID", s}
 	}
 	return s, nil
+}
+
+// GetObjJournalRecord returns the journal record for the provided handle.
+func (o *OlxAPI) GetObjJournalRecord(hnd int) string {
+	o.Lock()
+	r, _, _ := o.getObjJournalRecord.Call(uintptr(hnd))
+	o.Unlock()
+	return utf8StringFromPtr(r)
 }
 
 // GetAreaName returns the area name given the area id.

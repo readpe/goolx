@@ -234,3 +234,25 @@ func TestOlxAPI_FullNames(t *testing.T) {
 	})
 
 }
+
+func TestOlxAPI_GetObjJournalRecord(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+
+	var hnd int
+	if err := api.GetEquipment(TCBus, &hnd); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Okay", func(t *testing.T) {
+		expected := "Unknown\nUnknown\n2002/3/19 01:00\nUnknown"
+		got := api.GetObjJournalRecord(hnd)
+		if got != expected {
+			t.Errorf("got %q, expected %q", expected, got)
+		}
+	})
+}

@@ -622,6 +622,11 @@ func (c *Client) GetGUID(hnd int) (string, error) {
 	return c.olxAPI.GetObjGUID(hnd)
 }
 
+// GetJournal returns the object journal record for the provided handle.
+func (c *Client) GetJournal(hnd int) string {
+	return c.olxAPI.GetObjJournalRecord(hnd)
+}
+
 // GetAreaName returns the area name for the provided area id.
 func (c *Client) GetAreaName(area int) (string, error) {
 	return c.olxAPI.GetAreaName(area)
