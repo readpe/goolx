@@ -707,3 +707,18 @@ func (c *Client) GetSCCurrentSeq(hnd int) (I0, I1, I2 Phasor, err error) {
 	I2 = Phasor(complex(vdOut1[2], vdOut2[2]))
 	return
 }
+
+// FullBusName returns the full bus name for the provided handle, returns empty string on error.
+func (c *Client) FullBusName(hnd int) string {
+	return c.olxAPI.FullBusName(hnd)
+}
+
+// FullBranchName returns the full branch name for the provided handle, returns empty string on error.
+func (c *Client) FullBranchName(hnd int) string {
+	return c.olxAPI.FullBranchName(hnd)
+}
+
+// FullRelayName returns the full relay name for the provided handle, returns empty string on error.
+func (c *Client) FullRelayName(hnd int) string {
+	return c.olxAPI.FullRelayName(hnd)
+}

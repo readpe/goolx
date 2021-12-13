@@ -8,6 +8,7 @@ var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
 
 const (
 	TCBus      = 1
+	TCBranch   = 9
 	TCRLYGroup = 20
 )
 
@@ -177,6 +178,58 @@ func TestOlxAPI_GetLogicScheme(t *testing.T) {
 		var logicHnd int
 		if err := api.GetLogicScheme(rlyGrpHnd, &logicHnd); err == nil {
 			t.Errorf("expected 'GetRelay failure: scheme is empty', got %v", err)
+		}
+	})
+
+}
+
+func TestOlxAPI_FullNames(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("FullBusName", func(t *testing.T) {
+		var hnd int
+		if err := api.GetEquipment(TCBus, &hnd); err != nil {
+			t.Fatal(err)
+		}
+		expected := "28 ARIZONA 132.kV"
+		got := api.FullBusName(hnd)
+		if got != expected {
+			t.Errorf("got %q, expected %q", got, expected)
+		}
+	})
+	t.Run("FullBranchName", func(t *testing.T) {
+		var hnd int
+		if err := api.GetEquipment(TCBus, &hnd); err != nil {
+			t.Fatal(err)
+		}
+		var brHnd int
+		if err := api.GetBusEquipment(hnd, TCBranch, &brHnd); err != nil {
+			t.Fatal(err)
+		}
+		expected := "   28 ARIZONA            132.kV -     6 NEVADA             132.kV 1 L NV-AZ"
+		got := api.FullBranchName(brHnd)
+		if got != expected {
+			t.Errorf("got %q, expected %q", got, expected)
+		}
+	})
+	t.Run("FullBranchName", func(t *testing.T) {
+		var hnd int
+		if err := api.GetEquipment(TCRLYGroup, &hnd); err != nil {
+			t.Fatal(err)
+		}
+		var rlyHnd int
+		if err := api.GetRelay(hnd, &rlyHnd); err != nil {
+			t.Fatal(err)
+		}
+		expected := "[DS RELAY] GCXTEST ON     6 NEVADA             132.kV -     2 CLAYTOR            132.kV 1 L CLA-NV"
+		got := api.FullRelayName(rlyHnd)
+		if got != expected {
+			t.Errorf("got %q, expected %q", got, expected)
 		}
 	})
 

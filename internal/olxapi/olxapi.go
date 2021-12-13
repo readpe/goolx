@@ -94,6 +94,10 @@ type OlxAPI struct {
 	getSCVoltage   *syscall.Proc
 	getSCCurrent   *syscall.Proc
 	run1LPFCommand *syscall.Proc
+
+	fullBusName    *syscall.Proc
+	fullBranchName *syscall.Proc
+	fullRelayName  *syscall.Proc
 }
 
 // New loads the dll and procedures and returns a new instance of OlxAPI.
@@ -158,6 +162,9 @@ func New() *OlxAPI {
 	api.getSCVoltage = api.dll.MustFindProc("OlxAPIGetSCVoltage")
 	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetSCCurrent")
 	api.run1LPFCommand = api.dll.MustFindProc("OlxAPIRun1LPFCommand")
+	api.fullBusName = api.dll.MustFindProc("OlxAPIFullBusName")
+	api.fullBranchName = api.dll.MustFindProc("OlxAPIFullBranchName")
+	api.fullRelayName = api.dll.MustFindProc("OlxAPIFullRelayName")
 
 	return api
 }
@@ -863,4 +870,28 @@ func (o *OlxAPI) Run1LPFCommand(s string) error {
 		return ErrOlxAPI{"Run1LPFCommand", o.ErrorString()}
 	}
 	return nil
+}
+
+// FullBusName returns the full bus name for the provided bus handle, or an empty string.
+func (o *OlxAPI) FullBusName(hnd int) string {
+	o.Lock()
+	r, _, _ := o.fullBusName.Call(uintptr(hnd))
+	o.Unlock()
+	return utf8StringFromPtr(r)
+}
+
+// FullBranchName returns the full branch name for the provided branch handle, or an empty string.
+func (o *OlxAPI) FullBranchName(hnd int) string {
+	o.Lock()
+	r, _, _ := o.fullBranchName.Call(uintptr(hnd))
+	o.Unlock()
+	return utf8StringFromPtr(r)
+}
+
+// FullRelayName returns the full relay name for the provided relay handle, or an empty string.
+func (o *OlxAPI) FullRelayName(hnd int) string {
+	o.Lock()
+	r, _, _ := o.fullRelayName.Call(uintptr(hnd))
+	o.Unlock()
+	return utf8StringFromPtr(r)
 }
