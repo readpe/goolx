@@ -88,8 +88,12 @@ type OlxAPI struct {
 	setObjMemo          *syscall.Proc
 	getObjGUID          *syscall.Proc
 	getObjJournalRecord *syscall.Proc
-	getAreaName         *syscall.Proc
-	getZoneName         *syscall.Proc
+	getObjUDF           *syscall.Proc
+	getObjUDFByIndex    *syscall.Proc
+	setObjUDF           *syscall.Proc
+
+	getAreaName *syscall.Proc
+	getZoneName *syscall.Proc
 
 	pickFault      *syscall.Proc
 	getSCVoltage   *syscall.Proc
@@ -158,6 +162,9 @@ func New() *OlxAPI {
 	api.setObjMemo = api.dll.MustFindProc("OlxAPISetObjMemo")
 	api.getObjGUID = api.dll.MustFindProc("OlxAPIGetObjGUID")
 	api.getObjJournalRecord = api.dll.MustFindProc("OlxAPIGetObjJournalRecord")
+	api.getObjUDF = api.dll.MustFindProc("OlxAPIGetObjUDF")
+	api.getObjUDFByIndex = api.dll.MustFindProc("OlxAPIGetObjUDFByIndex")
+	api.setObjUDF = api.dll.MustFindProc("OlxAPISetObjUDF")
 	api.getAreaName = api.dll.MustFindProc("OlxAPIGetAreaName")
 	api.getZoneName = api.dll.MustFindProc("OlxAPIGetZoneName")
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
@@ -758,6 +765,52 @@ func (o *OlxAPI) GetObjJournalRecord(hnd int) string {
 	r, _, _ := o.getObjJournalRecord.Call(uintptr(hnd))
 	o.Unlock()
 	return utf8StringFromPtr(r)
+}
+
+// GetObjUDF returns the user defined field for the object with the provided handle and field.
+// field string is limited to 16 characters.
+func (o *OlxAPI) GetObjUDF(hnd int, field string) (string, error) {
+	// MXUDFNAME = 16 // Size of User defined field name
+	var fieldBuf = make([]byte, 16)
+	copy(fieldBuf, field)
+	// MXUDF = 64 // Size of User defined field value
+	var valBuf = make([]byte, 64)
+	o.Lock()
+	r, _, _ := o.getObjUDF.Call(uintptr(hnd), uintptr(unsafe.Pointer(&fieldBuf[0])), uintptr(unsafe.Pointer(&valBuf[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return string(valBuf), ErrOlxAPI{"GetObjUDF", o.ErrorString()}
+	}
+	return UTF8NullToString(valBuf), nil
+}
+
+// SetObjUDF sets the user defined field with the provided value. This does not create a user defined field if it does not exist.
+// The user defined field must be created in Oneliner first.
+func (o *OlxAPI) SetObjUDF(hnd int, field, value string) error {
+	var fieldBuf = make([]byte, 16)
+	copy(fieldBuf, field)
+	var valBuf = make([]byte, 64)
+	copy(valBuf, value)
+	o.Lock()
+	r, _, _ := o.setObjUDF.Call(uintptr(hnd), uintptr(unsafe.Pointer(&fieldBuf[0])), uintptr(unsafe.Pointer(&valBuf[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"SetObjUDF", o.ErrorString()}
+	}
+	return nil
+}
+
+// GetObjUDFByIndex returns the user defined field with the provided index.
+func (o *OlxAPI) GetObjUDFByIndex(hnd, i int) (field, value string, err error) {
+	var fieldBuf = make([]byte, 16)
+	var valBuf = make([]byte, 64)
+	o.Lock()
+	r, _, _ := o.getObjUDFByIndex.Call(uintptr(hnd), uintptr(i), uintptr(unsafe.Pointer(&fieldBuf[0])), uintptr(unsafe.Pointer(&valBuf[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return "", "", ErrOlxAPI{"GetObjUDFByIndex", o.ErrorString()}
+	}
+	return UTF8NullToString(fieldBuf), UTF8NullToString(valBuf), nil
 }
 
 // GetAreaName returns the area name given the area id.

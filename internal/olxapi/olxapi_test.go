@@ -1,10 +1,19 @@
 package olxapi
 
 import (
+	"path/filepath"
 	"testing"
 )
 
-var testCase = `C:\Program Files (x86)\ASPEN\1LPFv15\SAMPLE09.OLR`
+var testCase = `..\..\local\SAMPLE09.OLR`
+
+func init() {
+	var err error
+	testCase, err = filepath.Abs(testCase)
+	if err != nil {
+		panic(err)
+	}
+}
 
 const (
 	TCBus      = 1
@@ -13,6 +22,7 @@ const (
 )
 
 func TestOlxAPI_GetOlrFilename(t *testing.T) {
+	t.Log(testCase)
 	api := New()
 	err := api.LoadDataFile(testCase, false)
 	if err != nil {
@@ -252,7 +262,50 @@ func TestOlxAPI_GetObjJournalRecord(t *testing.T) {
 		expected := "Unknown\nUnknown\n2002/3/19 01:00\nUnknown"
 		got := api.GetObjJournalRecord(hnd)
 		if got != expected {
-			t.Errorf("got %q, expected %q", expected, got)
+			t.Errorf("got %q, expected %q", got, expected)
+		}
+	})
+}
+
+func TestOlxAPI_GetObjUDF(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+
+	var hnd int
+	if err := api.GetEquipment(TCBus, &hnd); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Invalid field name", func(t *testing.T) {
+		_, err := api.GetObjUDF(hnd, "NOTCORRECT")
+		if err == nil {
+			t.Errorf("expected error 'Invalid field name: test' got %v", err)
+		}
+	})
+	t.Run("Okay", func(t *testing.T) {
+		err := api.SetObjUDF(hnd, "SUBID", "SUBA")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := "SUBA"
+		got, err := api.GetObjUDF(hnd, "SUBID")
+		if err != nil {
+			t.Error(err)
+		}
+		if got != expected {
+			t.Errorf("got %q, expected %q", got, expected)
+		}
+		field, got, err := api.GetObjUDFByIndex(hnd, 0)
+		if err != nil {
+			t.Error(err)
+		}
+		if got != expected {
+			t.Errorf("got %q, expected %q", got, expected)
+			t.Log(field, got)
 		}
 	})
 }

@@ -627,6 +627,35 @@ func (c *Client) GetJournal(hnd int) string {
 	return c.olxAPI.GetObjJournalRecord(hnd)
 }
 
+// GetUDF returns the user defined field at the provided equipment with the specified field name.
+func (c *Client) GetUDF(hnd int, field string) (string, error) {
+	s, err := c.olxAPI.GetObjUDF(hnd, field)
+	if err != nil {
+		return "", err
+	}
+	return s, nil
+}
+
+// GetUDFByIndex returns the user defined field at the provided equipment with the specified field index.
+func (c *Client) GetUDFByIndex(hnd, i int) (field, value string, err error) {
+	field, value, err = c.olxAPI.GetObjUDFByIndex(hnd, i)
+	if err != nil {
+		return "", "", err
+	}
+	return field, value, nil
+}
+
+// SetUDF sets the user defined field at the provided equipment with the specified field name and value.
+// SetUDF does not create a new user defined field if it does not exist. User defined fields must be created
+// in Oneliner GUI.
+func (c *Client) SetUDF(hnd int, field, value string) error {
+	err := c.olxAPI.SetObjUDF(hnd, field, value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAreaName returns the area name for the provided area id.
 func (c *Client) GetAreaName(area int) (string, error) {
 	return c.olxAPI.GetAreaName(area)
