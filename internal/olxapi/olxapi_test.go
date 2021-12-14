@@ -309,3 +309,20 @@ func TestOlxAPI_GetObjUDF(t *testing.T) {
 		}
 	})
 }
+
+func TestOlxAPI_GetPSCVoltage(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+	var hnd int
+	if err := api.GetEquipment(TCBus, &hnd); err != nil {
+		t.Fatal(err)
+	}
+	_, _, err := api.GetPSCVoltage(hnd, 0)
+	if err == nil {
+		t.Errorf("expected incorrect style code 0")
+	}
+}

@@ -1201,3 +1201,40 @@ func TestClient_Nextlogicscheme(t *testing.T) {
 		}
 	}
 }
+
+func TestClient_GetPSCVoltage(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase); err != nil {
+		t.Fatal(err)
+	}
+
+	buses := api.NextEquipment(TCBus)
+	if !buses.Next() {
+		t.Fatal("could not get bus")
+	}
+
+	err := api.DoFault(buses.Hnd(), NewFaultConfig(FaultConn(ABC), FaultCloseIn(), FaultClearPrev(true)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = api.PickFault(SFFirst, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("KV", func(t *testing.T) {
+		_, err := api.GetPSCVoltageKV(buses.Hnd())
+		if err != nil {
+			t.Error(err)
+		}
+	})
+	t.Run("PU", func(t *testing.T) {
+		_, err := api.GetPSCVoltagePU(buses.Hnd())
+		if err != nil {
+			t.Error(err)
+		}
+	})
+}

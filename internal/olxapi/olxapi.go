@@ -96,6 +96,7 @@ type OlxAPI struct {
 	getZoneName *syscall.Proc
 
 	pickFault      *syscall.Proc
+	getPSCVoltage  *syscall.Proc
 	getSCVoltage   *syscall.Proc
 	getSCCurrent   *syscall.Proc
 	run1LPFCommand *syscall.Proc
@@ -168,6 +169,7 @@ func New() *OlxAPI {
 	api.getAreaName = api.dll.MustFindProc("OlxAPIGetAreaName")
 	api.getZoneName = api.dll.MustFindProc("OlxAPIGetZoneName")
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
+	api.getPSCVoltage = api.dll.MustFindProc("OlxAPIGetPSCVoltage")
 	api.getSCVoltage = api.dll.MustFindProc("OlxAPIGetSCVoltage")
 	api.getSCCurrent = api.dll.MustFindProc("OlxAPIGetSCCurrent")
 	api.run1LPFCommand = api.dll.MustFindProc("OlxAPIRun1LPFCommand")
@@ -861,6 +863,23 @@ func (o *OlxAPI) PickFault(indx, tiers int) error {
 		return ErrOlxAPI{"PickFault", o.ErrorString()}
 	}
 	return nil
+}
+
+// GetPSCVoltage returns the pre-fault voltage for the provided bus or equipment.
+// See Oneliner documentation for returned array structure details
+func (o *OlxAPI) GetPSCVoltage(hnd, styleCode int) (vdOut1, vdOut2 [3]float64, err error) {
+	switch styleCode {
+	case 1, 2:
+	default:
+		return vdOut1, vdOut2, fmt.Errorf("GetPSCVoltage: incorrect style code %d", styleCode)
+	}
+	o.Lock()
+	r, _, _ := o.getPSCVoltage.Call(uintptr(hnd), uintptr(unsafe.Pointer(&vdOut1[0])), uintptr(unsafe.Pointer(&vdOut2[0])), uintptr(styleCode))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return vdOut1, vdOut2, ErrOlxAPI{"GetPSCVoltage", o.ErrorString()}
+	}
+	return vdOut1, vdOut2, nil
 }
 
 // GetSCVoltage Retrieves post-fault voltage of a bus, or of connected buses of

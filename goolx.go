@@ -690,6 +690,34 @@ func (c *Client) NextFault(tiers int) FaultIterator {
 	}
 }
 
+// GetPSCVoltageKV returns the pre-fault voltage for the provided bus or equipment in kV.
+// See Oneliner documentation for returned array structure details.
+func (c *Client) GetPSCVoltageKV(hnd int) ([]Phasor, error) {
+	vdOut1, vdOut2, err := c.olxAPI.GetPSCVoltage(hnd, 1)
+	if err != nil {
+		return nil, err
+	}
+	return []Phasor{
+		NewPhasor(vdOut1[0], vdOut2[0]),
+		NewPhasor(vdOut1[1], vdOut2[1]),
+		NewPhasor(vdOut1[2], vdOut2[2]),
+	}, nil
+}
+
+// GetPSCVoltagePU returns the pre-fault voltage for the provided bus or equipment in PU.
+// See Oneliner documentation for returned array structure details.
+func (c *Client) GetPSCVoltagePU(hnd int) ([]Phasor, error) {
+	vdOut1, vdOut2, err := c.olxAPI.GetPSCVoltage(hnd, 2)
+	if err != nil {
+		return nil, err
+	}
+	return []Phasor{
+		NewPhasor(vdOut1[0], vdOut2[0]),
+		NewPhasor(vdOut1[1], vdOut2[1]),
+		NewPhasor(vdOut1[2], vdOut2[2]),
+	}, nil
+}
+
 // GetSCVoltagePhase gets the short circuit phase voltage for the equipment with the provided handle.
 // Returns Va, Vb, Vc Phasor types. PickFault must be called first.
 func (c *Client) GetSCVoltagePhase(hnd int) (Va, Vb, Vc Phasor, err error) {
