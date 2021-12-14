@@ -656,6 +656,16 @@ func (c *Client) SetUDF(hnd int, field, value string) error {
 	return nil
 }
 
+// Find1LPF returns the handle for the object with the provided string id.
+func (c *Client) Find1LPF(id string) (int, error) {
+	return c.olxAPI.FindObj1LPF(id)
+}
+
+// Print1LPF returns the object string id.
+func (c *Client) Print1LPF(hnd int) (string, error) {
+	return c.olxAPI.PrintObj1LPF(hnd)
+}
+
 // GetAreaName returns the area name for the provided area id.
 func (c *Client) GetAreaName(area int) (string, error) {
 	return c.olxAPI.GetAreaName(area)

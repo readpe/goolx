@@ -326,3 +326,27 @@ func TestOlxAPI_GetPSCVoltage(t *testing.T) {
 		t.Errorf("expected incorrect style code 0")
 	}
 }
+
+func TestOlxAPI_FindObj1LPF(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+	var hnd int
+	if err := api.GetEquipment(TCBus, &hnd); err != nil {
+		t.Fatal(err)
+	}
+	s, err := api.PrintObj1LPF(hnd)
+	if err != nil {
+		t.Error(err)
+	}
+	got, err := api.FindObj1LPF(s)
+	if err != nil {
+		t.Error(err)
+	}
+	if got != hnd {
+		t.Errorf("got %d, expected %d", got, hnd)
+	}
+}

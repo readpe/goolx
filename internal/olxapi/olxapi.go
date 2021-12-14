@@ -91,6 +91,8 @@ type OlxAPI struct {
 	getObjUDF           *syscall.Proc
 	getObjUDFByIndex    *syscall.Proc
 	setObjUDF           *syscall.Proc
+	findObj1LPF         *syscall.Proc
+	printObj1LPF        *syscall.Proc
 
 	getAreaName *syscall.Proc
 	getZoneName *syscall.Proc
@@ -166,6 +168,8 @@ func New() *OlxAPI {
 	api.getObjUDF = api.dll.MustFindProc("OlxAPIGetObjUDF")
 	api.getObjUDFByIndex = api.dll.MustFindProc("OlxAPIGetObjUDFByIndex")
 	api.setObjUDF = api.dll.MustFindProc("OlxAPISetObjUDF")
+	api.findObj1LPF = api.dll.MustFindProc("OlxAPIFindObj1LPF")
+	api.printObj1LPF = api.dll.MustFindProc("OlxAPIPrintObj1LPF")
 	api.getAreaName = api.dll.MustFindProc("OlxAPIGetAreaName")
 	api.getZoneName = api.dll.MustFindProc("OlxAPIGetZoneName")
 	api.pickFault = api.dll.MustFindProc("OlxAPIPickFault")
@@ -813,6 +817,28 @@ func (o *OlxAPI) GetObjUDFByIndex(hnd, i int) (field, value string, err error) {
 		return "", "", ErrOlxAPI{"GetObjUDFByIndex", o.ErrorString()}
 	}
 	return UTF8NullToString(fieldBuf), UTF8NullToString(valBuf), nil
+}
+
+// FindObj1LPF returns handle number of the object in the id string
+func (o *OlxAPI) FindObj1LPF(id string) (int, error) {
+	var hnd int
+	b, _ := UTF8NullFromString(id)
+	o.Lock()
+	r, _, _ := o.findObj1LPF.Call(uintptr(unsafe.Pointer(&b[0])), uintptr(unsafe.Pointer(&hnd)))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return 0, ErrOlxAPI{"FindObj1LPF", o.ErrorString()}
+	}
+	return hnd, nil
+}
+
+// PrintObj1LPF returns a formatted ID string of the given object.
+func (o *OlxAPI) PrintObj1LPF(hnd int) (string, error) {
+	o.Lock()
+	r, _, _ := o.printObj1LPF.Call(uintptr(hnd))
+	o.Unlock()
+	s := utf8StringFromPtr(r)
+	return s, nil
 }
 
 // GetAreaName returns the area name given the area id.
