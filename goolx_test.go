@@ -1268,3 +1268,24 @@ func TestClient_BoundaryEquivalent(t *testing.T) {
 		t.Errorf("expected non-zero case size")
 	}
 }
+
+func TestClient_GetJournal(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase); err != nil {
+		t.Error(err)
+	}
+
+	hnd, err := api.FindBusByName("NEVADA", 132.0)
+	if err != nil {
+		t.Error(err)
+	}
+
+	j := api.GetJournal(hnd)
+	expected := "{CreatedAt:Unknown CreatedBy:Unknown ModifiedAt:1986/1/1 00:00 ModifiedBy:Unknown}"
+	got := fmt.Sprintf("%+v", j)
+	if got != expected {
+		t.Errorf("got %q, expected %q", got, expected)
+	}
+}

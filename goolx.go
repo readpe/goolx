@@ -663,9 +663,26 @@ func (c *Client) GetGUID(hnd int) (string, error) {
 	return c.olxAPI.GetObjGUID(hnd)
 }
 
+// Journal represents a Oneliner object journal record. Obtained from GetJournal method.
+type Journal struct {
+	CreatedAt  string
+	CreatedBy  string
+	ModifiedAt string
+	ModifiedBy string
+}
+
 // GetJournal returns the object journal record for the provided handle.
-func (c *Client) GetJournal(hnd int) string {
-	return c.olxAPI.GetObjJournalRecord(hnd)
+func (c *Client) GetJournal(hnd int) Journal {
+	s := c.olxAPI.GetObjJournalRecord(hnd)
+	ss := strings.Split(s, "\n")
+	j := Journal{}
+	if len(ss) == 4 {
+		j.CreatedAt = ss[0]
+		j.CreatedBy = ss[1]
+		j.ModifiedAt = ss[2]
+		j.ModifiedBy = ss[3]
+	}
+	return j
 }
 
 // GetUDF returns the user defined field at the provided equipment with the specified field name.
