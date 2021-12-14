@@ -1,6 +1,8 @@
 package olxapi
 
 import (
+	"os"
+	"path"
 	"path/filepath"
 	"testing"
 )
@@ -348,5 +350,33 @@ func TestOlxAPI_FindObj1LPF(t *testing.T) {
 	}
 	if got != hnd {
 		t.Errorf("got %d, expected %d", got, hnd)
+	}
+}
+
+func TestOlxAPI_BoundaryEquivalent(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+	var hnd int
+	if err := api.GetEquipment(TCBus, &hnd); err != nil {
+		t.Fatal(err)
+	}
+
+	tmpFile := path.Join(os.TempDir(), "test.olr")
+	err := api.BoundaryEquivalent(tmpFile, []int{hnd}, [3]float64{0, 0, 0})
+	if err != nil {
+		t.Error(err)
+	}
+
+	info, err := os.Stat(tmpFile)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if info.Size() == 0 {
+		t.Errorf("expected non-zero equivalent case size")
 	}
 }

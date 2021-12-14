@@ -55,23 +55,24 @@ type OlxAPI struct {
 	faultPicked bool
 
 	// OlxAPI Procedures
-	errorString       *syscall.Proc
-	versionInfo       *syscall.Proc
-	saveDataFile      *syscall.Proc
-	loadDataFile      *syscall.Proc
-	getOlrFileName    *syscall.Proc
-	closeDataFile     *syscall.Proc
-	readChangeFile    *syscall.Proc
-	getEquipment      *syscall.Proc
-	deleteEquipment   *syscall.Proc
-	equipmentType     *syscall.Proc
-	getData           *syscall.Proc
-	setData           *syscall.Proc
-	postData          *syscall.Proc
-	findBusByName     *syscall.Proc
-	getEquipmentByTag *syscall.Proc
-	findBusNo         *syscall.Proc
-	getBusEquipment   *syscall.Proc
+	errorString        *syscall.Proc
+	versionInfo        *syscall.Proc
+	saveDataFile       *syscall.Proc
+	loadDataFile       *syscall.Proc
+	getOlrFileName     *syscall.Proc
+	closeDataFile      *syscall.Proc
+	readChangeFile     *syscall.Proc
+	getEquipment       *syscall.Proc
+	deleteEquipment    *syscall.Proc
+	equipmentType      *syscall.Proc
+	getData            *syscall.Proc
+	setData            *syscall.Proc
+	postData           *syscall.Proc
+	findBusByName      *syscall.Proc
+	getEquipmentByTag  *syscall.Proc
+	findBusNo          *syscall.Proc
+	getBusEquipment    *syscall.Proc
+	boundaryEquivalent *syscall.Proc
 
 	makeOutageList     *syscall.Proc
 	doFault            *syscall.Proc
@@ -151,6 +152,7 @@ func New() *OlxAPI {
 	api.getEquipmentByTag = api.dll.MustFindProc("OlxAPIFindEquipmentByTag")
 	api.findBusNo = api.dll.MustFindProc("OlxAPIFindBusNo")
 	api.getBusEquipment = api.dll.MustFindProc("OlxAPIGetBusEquipment")
+	api.boundaryEquivalent = api.dll.MustFindProc("OlxAPIBoundaryEquivalent")
 	api.makeOutageList = api.dll.MustFindProc("OlxAPIMakeOutageList")
 	api.doFault = api.dll.MustFindProc("OlxAPIDoFault")
 	api.faultDescriptionEx = api.dll.MustFindProc("OlxAPIFaultDescriptionEx")
@@ -511,6 +513,20 @@ func (o *OlxAPI) GetBusEquipment(busHnd, eqType int, hnd *int) error {
 		return io.EOF
 	case OLXAPIFailure:
 		return ErrOlxAPI{"GetBusEquipment", o.ErrorString()}
+	}
+	return nil
+}
+
+// BoundaryEquivalent creates a boundry equivalent case with the given bus list and options.
+func (o *OlxAPI) BoundaryEquivalent(file string, buslist []int, fltOpt [3]float64) error {
+	// buslist must be terminated by -1.
+	buslist = append(buslist, -1)
+	b, _ := UTF8NullFromString(file)
+	o.Lock()
+	r, _, _ := o.boundaryEquivalent.Call(uintptr(unsafe.Pointer(&b[0])), uintptr(unsafe.Pointer(&buslist[0])), uintptr(unsafe.Pointer(&fltOpt[0])))
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return ErrOlxAPI{"BoundaryEquivalent", o.ErrorString()}
 	}
 	return nil
 }

@@ -1238,3 +1238,33 @@ func TestClient_GetPSCVoltage(t *testing.T) {
 		}
 	})
 }
+
+func TestClient_BoundaryEquivalent(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase); err != nil {
+		t.Fatal(err)
+	}
+
+	buses := api.NextEquipment(TCBus)
+	if !buses.Next() {
+		t.Fatal("could not get bus")
+	}
+
+	tmpFile := path.Join(os.TempDir(), "test.olr")
+	cfg := NewBoundaryConfig(BoundaryEliminationThreshold(1), BoundaryKeepAnnotations(), BoundaryKeepEquipment())
+	err := api.BoundaryEquivalent(tmpFile, []int{buses.Hnd()}, cfg)
+	if err != nil {
+		t.Error(err)
+	}
+	info, err := os.Stat(tmpFile)
+	if err != nil {
+
+		t.Error(err)
+	}
+
+	if info.Size() == 0 {
+		t.Errorf("expected non-zero case size")
+	}
+}

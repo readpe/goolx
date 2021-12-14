@@ -126,6 +126,47 @@ func (c *Client) NextBusEquipment(busHnd, eqType int) HandleIterator {
 	}
 }
 
+// BoundaryConfig represents the configuration parameters for the BoundaryEquivalent method.
+type BoundaryConfig [3]float64
+
+// BoundaryOption represents an option modifying function to be applied to a BoundaryConfig type.
+type BoundaryOption func(*BoundaryConfig)
+
+// BoundaryEliminationThreshold sets the per unit elimination threshold. Refer to Oneliner documentation for more details.
+func BoundaryEliminationThreshold(pu float64) BoundaryOption {
+	return func(bc *BoundaryConfig) {
+		bc[0] = pu
+	}
+}
+
+// BoundaryKeepEquipment enables the keep bus equipment configuration option
+func BoundaryKeepEquipment() BoundaryOption {
+	return func(bc *BoundaryConfig) {
+		bc[1] = 1
+	}
+}
+
+// BoundaryKeepAnnotations enables the keep annotations configuration option.
+func BoundaryKeepAnnotations() BoundaryOption {
+	return func(bc *BoundaryConfig) {
+		bc[2] = 1
+	}
+}
+
+// NewBoundaryConfig creates a new BoundaryConfig with the provided options functions applied.
+func NewBoundaryConfig(options ...BoundaryOption) BoundaryConfig {
+	var bc = BoundaryConfig{}
+	for _, opt := range options {
+		opt(&bc)
+	}
+	return bc
+}
+
+// BoundaryEquivalent created an equivalent case with the provided bus list and config.
+func (c *Client) BoundaryEquivalent(file string, busList []int, cfg BoundaryConfig) error {
+	return c.olxAPI.BoundaryEquivalent(file, busList, [3]float64(cfg))
+}
+
 // EquipmentType returns the equipment type code for the equipment with the provided handle
 func (c *Client) EquipmentType(hnd int) (int, error) {
 	return c.olxAPI.EquipmentType(hnd)
