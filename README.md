@@ -28,44 +28,48 @@ GARCH=386
 # Usage Example
 Also see [OlxCLI](https://github.com/readpe/olxcli) for example usage. 
 
+[Example: Bus faults](example/readme.go)
 ```go
-import (
-	"fmt"
-	"log"
-
-	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/constants"
-	"github.com/readpe/goolx/model"
-)
-
 func main() {
-	c := goolx.NewClient()
-	defer c.Release() // releases api dll at function return
-
-	// Print the olxapi info.
-	info := c.Info()
-	fmt.Println(info)
+	api := goolx.NewClient()
+	defer api.Release() // releases api dll at function return
 
 	// Load a oneliner case into memory.
-	err := c.LoadDataFile("system.olr")
-	if err != nil {
+	if err := api.LoadDataFile(`local\SAMPLE09.OLR`); err != nil {
 		log.Fatal(err)
 	}
 
-	// Loop through all buses in case using NextEquipment iterator.
-	buses := c.NextEquipment(constants.TCBus)
-	for buses.Next() {
-		hnd := buses.Hnd()
+	// Define a 3LG bus fault config for DoFault.
+	fltCfg := goolx.NewFaultConfig(goolx.FaultCloseIn(), goolx.FaultConn(goolx.ABC), goolx.FaultClearPrev(true))
 
-		// Get bus data
-		b, err := model.GetBus(c, hnd)
-		if err != nil {
-			log.Println(fmt.Errorf("could not get bus data: %v", err))
+	// Loop through all buses in case using NextEquipment iterator.
+	for bi := api.NextEquipment(goolx.TCBus); bi.Next(); {
+		hnd := bi.Hnd()
+
+		// Run 3LG bus fault with defined fault config.
+		if err := api.DoFault(hnd, fltCfg); err != nil {
+			log.Println(err)
 			continue
 		}
-		fmt.Printf("found bus %s %fkV with handle: %d", b.Name, b.KVNominal, b.HND)
+
+		fd := api.FaultDescription(1)
+		fmt.Println(fd)
 	}
 }
+```
+
+Output:
+```bash
+go run .\example\readme.go
+1. Bus Fault on:          28 ARIZONA          132. kV 3LG
+1. Bus Fault on:           2 CLAYTOR          132. kV 3LG
+1. Bus Fault on:           5 FIELDALE         132. kV 3LG
+1. Bus Fault on:           6 NEVADA           132. kV 3LG
+1. Bus Fault on:          10 NEW HAMPSHR      33.  kV 3LG
+1. Bus Fault on:           7 OHIO             132. kV 3LG
+1. Bus Fault on:           8 REUSENS          132. kV 3LG
+1. Bus Fault on:          11 ROANOKE          13.8 kV 3LG
+1. Bus Fault on:           4 TENNESSEE        132. kV 3LG
 ```
 
 ## Disclaimer

@@ -9,34 +9,31 @@ import (
 	"log"
 
 	"github.com/readpe/goolx"
-	"github.com/readpe/goolx/model"
 )
 
 func main() {
-	c := goolx.NewClient()
-	defer c.Release() // releases api dll at function return
-
-	// Print the olxapi info.
-	info := c.Info()
-	fmt.Println(info)
+	api := goolx.NewClient()
+	defer api.Release() // releases api dll at function return
 
 	// Load a oneliner case into memory.
-	err := c.LoadDataFile("system.olr")
-	if err != nil {
+	if err := api.LoadDataFile(`local\SAMPLE09.OLR`); err != nil {
 		log.Fatal(err)
 	}
 
-	// Loop through all buses in case using NextEquipment iterator.
-	buses := c.NextEquipment(goolx.TCBus)
-	for buses.Next() {
-		hnd := buses.Hnd()
+	// Define a 3LG bus fault config for DoFault.
+	fltCfg := goolx.NewFaultConfig(goolx.FaultCloseIn(), goolx.FaultConn(goolx.ABC), goolx.FaultClearPrev(true))
 
-		// Get bus data
-		b, err := model.GetBus(c, hnd)
-		if err != nil {
-			log.Println(fmt.Errorf("could not get bus data: %v", err))
+	// Loop through all buses in case using NextEquipment iterator.
+	for bi := api.NextEquipment(goolx.TCBus); bi.Next(); {
+		hnd := bi.Hnd()
+
+		// Run 3LG bus fault with defined fault config.
+		if err := api.DoFault(hnd, fltCfg); err != nil {
+			log.Println(err)
 			continue
 		}
-		fmt.Printf("found bus %s %fkV with handle: %d", b.Name, b.KVNominal, b.HND)
+
+		fd := api.FaultDescription(1)
+		fmt.Println(fd)
 	}
 }
