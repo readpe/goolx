@@ -1289,3 +1289,39 @@ func TestClient_GetJournal(t *testing.T) {
 		t.Errorf("got %q, expected %q", got, expected)
 	}
 }
+
+func TestClient_ComputeRelayTime(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase); err != nil {
+		t.Error(err)
+	}
+
+	hi := api.NextEquipment(TCRLYGroup)
+	if !hi.Next() {
+		t.Errorf("could not get relay group")
+	}
+	rgHnd := hi.Hnd()
+
+	hi = api.NextRelay(rgHnd)
+	if !hi.Next() {
+		t.Errorf("could not get relay")
+	}
+	rlyHnd := hi.Hnd()
+
+	opTime, opText, err := api.ComputeRelayTime(rlyHnd, ComputeRelayTimeParams{
+		Ia:   NewPhasor(20000, 0),
+		Ib:   NewPhasor(20000, -120),
+		Ic:   NewPhasor(20000, 120),
+		VPre: NewPhasor(132.0/1.732, 0),
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	expected := "0.00 ZP1"
+	got := fmt.Sprintf("%0.2f %s", opTime, opText)
+	if got != expected {
+		t.Errorf("got %s, expected %s", got, expected)
+	}
+}

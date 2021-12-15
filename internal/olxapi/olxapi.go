@@ -81,6 +81,7 @@ type OlxAPI struct {
 	getSteppedEvent    *syscall.Proc
 	getRelay           *syscall.Proc
 	getRelayTime       *syscall.Proc
+	computeRelayTime   *syscall.Proc
 	getLogicScheme     *syscall.Proc
 
 	getObjTags          *syscall.Proc
@@ -160,6 +161,7 @@ func New() *OlxAPI {
 	api.getSteppedEvent = api.dll.MustFindProc("OlxAPIGetSteppedEvent")
 	api.getRelay = api.dll.MustFindProc("OlxAPIGetRelay")
 	api.getRelayTime = api.dll.MustFindProc("OlxAPIGetRelayTime")
+	api.computeRelayTime = api.dll.MustFindProc("OlxAPIComputeRelayTime")
 	api.getLogicScheme = api.dll.MustFindProc("OlxAPIGetLogicScheme")
 	api.getObjTags = api.dll.MustFindProc("OlxAPIGetObjTags")
 	api.setObjTags = api.dll.MustFindProc("OlxAPISetObjTags")
@@ -695,6 +697,36 @@ func (o *OlxAPI) GetRelayTime(rlyHnd int, mult float64, tripOnly bool) (float64,
 
 	opTime := math.Float64frombits(binary.LittleEndian.Uint64(bufTime))
 	opText := UTF8NullToString(bufOpText)
+	return opTime, opText, nil
+}
+
+// ComputeRelayTime computes the relay operation time and device for the provided input voltage and current parameters.
+func (o *OlxAPI) ComputeRelayTime(hnd int, curMag, curAng [5]float64, vMag, vAng [3]float64, vPreMag, vPreAng float64) (opTime float64, opText string, err error) {
+	f322VPreMag := float64ToUint32(vPreMag)
+	f322VPreAng := float64ToUint32(vPreAng)
+	bufTime := make([]byte, 8)     // Operation time buffer.
+	bufOpText := make([]byte, 128) // Operation text buffer, 128 bytes.
+
+	o.Lock()
+	r, _, _ := o.computeRelayTime.Call(
+		uintptr(hnd),
+		uintptr(unsafe.Pointer(&curMag[0])),
+		uintptr(unsafe.Pointer(&curAng[0])),
+		uintptr(unsafe.Pointer(&vMag[0])),
+		uintptr(unsafe.Pointer(&vAng[0])),
+		uintptr(f322VPreMag[0]), uintptr(f322VPreMag[1]),
+		uintptr(f322VPreAng[0]), uintptr(f322VPreAng[1]),
+		uintptr(unsafe.Pointer(&bufTime[0])),
+		uintptr(unsafe.Pointer(&bufOpText[0])),
+	)
+	o.Unlock()
+	if r == OLXAPIFailure {
+		return 0, "", ErrOlxAPI{"ComputeRelayTime", o.ErrorString()}
+	}
+
+	opTime = math.Float64frombits(binary.LittleEndian.Uint64(bufTime))
+	opText = UTF8NullToString(bufOpText)
+
 	return opTime, opText, nil
 }
 

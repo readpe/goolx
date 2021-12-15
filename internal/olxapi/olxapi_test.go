@@ -380,3 +380,42 @@ func TestOlxAPI_BoundaryEquivalent(t *testing.T) {
 		t.Errorf("expected non-zero equivalent case size")
 	}
 }
+
+func TestOlxAPI_ComputeRelayTime(t *testing.T) {
+	api := New()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase, false); err != nil {
+		t.Fatal(err)
+	}
+
+	var rgHnd int
+	if err := api.GetEquipment(TCRLYGroup, &rgHnd); err != nil {
+		t.Fatal(err)
+	}
+
+	var rlyHnd int
+	if err := api.GetRelay(rgHnd, &rlyHnd); err != nil {
+		t.Fatal(err)
+	}
+
+	opTime, opText, err := api.ComputeRelayTime(
+		rlyHnd,
+		[5]float64{20000, 20000, 20000},
+		[5]float64{},
+		[3]float64{},
+		[3]float64{},
+		132/1.732,
+		0,
+	)
+	if err != nil {
+		t.Error(err)
+	}
+	if opTime != 9999 {
+		t.Errorf("got %f opTime, expected 9999", opTime)
+	}
+	if opText != "NOP" {
+		t.Errorf("got %s opText, expected NOP", opText)
+	}
+
+}

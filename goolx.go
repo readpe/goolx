@@ -554,6 +554,32 @@ func (c *Client) GetRelayTime(rlyHnd int, mult float64, tripOnly bool) (float64,
 	return c.olxAPI.GetRelayTime(rlyHnd, mult, tripOnly)
 }
 
+// ComputeRelayTimeParams represents input parameters for use with the ComputeRelayTime method.
+type ComputeRelayTimeParams struct {
+	// Relay phase current.
+	Ia, Ib, Ic Phasor
+	// Relay neutral winding currents, if applicable, winding P and S.
+	In1, In2 Phasor
+	// Relay phase voltages.
+	Va, Vb, Vc Phasor
+	// Relau pre-fault voltage.
+	VPre Phasor
+}
+
+// ComputeRelayTime computes operating time for a fuse, recloser, an overcurrent relay (phase or ground),
+// or a distance relay (phase or ground) at given currents and voltages.
+func (c *Client) ComputeRelayTime(hnd int, p ComputeRelayTimeParams) (float64, string, error) {
+	return c.olxAPI.ComputeRelayTime(
+		hnd,
+		[5]float64{p.Ia.Mag(), p.Ib.Mag(), p.Ic.Mag(), p.In1.Mag(), p.In2.Mag()},
+		[5]float64{p.Ia.Ang(), p.Ib.Ang(), p.Ic.Ang(), p.In1.Ang(), p.In2.Ang()},
+		[3]float64{p.Va.Mag(), p.Vb.Mag(), p.Vc.Mag()},
+		[3]float64{p.Va.Ang(), p.Vb.Ang(), p.Vc.Ang()},
+		p.VPre.Mag(),
+		p.VPre.Ang(),
+	)
+}
+
 // NextLogicScheme returns the next Logic Scheme handle available in the provided relay group.
 // Utilize the Next() method to loop through the available handles. The Hnd() method returns the selected handle.
 func (c *Client) NextLogicScheme(rlyGroupHnd int) HandleIterator {
