@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -280,6 +281,29 @@ func TestDoFault(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestClient_DoFault(t *testing.T) {
+	api := NewClient()
+	defer api.Release()
+
+	if err := api.LoadDataFile(testCase); err != nil {
+		t.Error(err)
+	}
+
+	cfg := NewFaultConfig(FaultConn(AG), FaultClearPrev(true), FaultCloseIn(), FaultRX(2, 2))
+	for b := api.NextEquipment(TCBus); b.Next(); {
+		if err := api.DoFault(b.Hnd(), cfg); err != nil {
+			t.Error(err)
+			continue
+		}
+		for f := api.NextFault(5); f.Next(); {
+			fd := api.FaultDescription(f.Index())
+			if !strings.Contains(fd, "R=2 X=2") {
+				t.Errorf("expected R=2 X=2 in fault description, got %q", fd)
+			}
+		}
+	}
 }
 
 func TestDoSteppedEvent(t *testing.T) {
