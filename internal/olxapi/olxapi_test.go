@@ -1,9 +1,12 @@
 package olxapi
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -143,12 +146,35 @@ func TestOlxAPI_GetRelayTime(t *testing.T) {
 	})
 }
 
+func version(api *OlxAPI) (float64, error) {
+	s := api.VersionInfo()
+	ss := strings.Split(s, " ")
+	if len(ss) < 3 {
+		return 0, fmt.Errorf("unable to parse api version")
+	}
+	sf, err := strconv.ParseFloat(ss[2], 64)
+	if err != nil {
+		return 0, err
+	}
+	return sf, nil
+}
+
 func TestOlxAPI_MakeOutageList(t *testing.T) {
 	api := New()
 	defer api.Release()
 	err := api.LoadDataFile(testCase, false)
 	if err != nil {
 		t.Error(err)
+	}
+
+	ver, err := version(api)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ver < 15.5 {
+		t.Log("Known error in OlxAPIMakeOutageList in version 15.4, skipping tests")
+		t.Skip()
 	}
 
 	t.Run("Okay", func(t *testing.T) {
@@ -159,15 +185,15 @@ func TestOlxAPI_MakeOutageList(t *testing.T) {
 			if err != nil {
 				break
 			}
-			_, err := api.MakeOutageList(hnd, 9, 1)
+			otgs, err := api.MakeOutageList(hnd, 9, 1)
 			if err != nil {
 				t.Error(err)
 			}
 			// TODO: Getting unexpected results from OlxAPI, need to research more.
-			// if otgs[len(otgs)-1] != 0 {
-			// 	t.Errorf("outage list not zero terminated")
-			// 	t.Log(hnd, otgs)
-			// }
+			if otgs[len(otgs)-1] != 0 {
+				t.Errorf("outage list not zero terminated")
+				t.Log(hnd, otgs)
+			}
 		}
 
 	})

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -1010,10 +1011,26 @@ func TestClient_SetData(t *testing.T) {
 }
 
 func TestClient_MakeOutageList(t *testing.T) {
+
 	api := NewClient()
+
+	ver, err := api.Version()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	verFloat, err := strconv.ParseFloat(ver, 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if verFloat < 15.5 {
+		t.Log("Known error in OlxAPIMakeOutageList in version 15.4, skipping tests")
+		t.Skip()
+	}
+
 	defer api.Release()
 
-	err := api.LoadDataFile(testCase)
+	err = api.LoadDataFile(testCase)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1068,8 +1085,7 @@ func TestClient_MakeOutageList(t *testing.T) {
 		}
 	})
 	t.Run("Run", func(t *testing.T) {
-		t.Skip("Unexpected return from MakeOutageList in this test")
-		otgs, err := api.MakeOutageList(hnd, 0, OtgLine)
+		otgs, err := api.MakeOutageList(hnd, 1, OtgLine)
 		if err != nil {
 			t.Error(err)
 		}
@@ -1082,7 +1098,7 @@ func TestClient_MakeOutageList(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		expected := 4
+		expected := 8
 		var got int
 		flts := api.NextFault(5)
 		for flts.Next() {
