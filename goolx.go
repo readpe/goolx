@@ -440,7 +440,11 @@ func (c *Client) PostData(hnd int) error {
 
 // FindBusByName returns the bus handle for the given bus name and kv, if found
 func (c *Client) FindBusByName(name string, kv float64) (int, error) {
-	return c.olxAPI.FindBusByName(name, kv)
+	hnd, err := c.olxAPI.FindBusByName(name, kv)
+	if err != nil {
+		return 0, fmt.Errorf("FindBusByName: could not find bus %s %0.2f", name, kv)
+	}
+	return hnd, nil
 }
 
 // NextEquipmentByTag returns a NextEquipmentTag type which satisfies the HandleIterator interface.
