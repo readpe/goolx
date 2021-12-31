@@ -77,9 +77,14 @@ func (c *Client) SaveDataFile(name string) error {
 	return c.olxAPI.SaveDataFile(name)
 }
 
-// LoadDataFile loads *.olr file from disk
+// LoadDataFile loads *.olr file from disk. Opens read/write.
 func (c *Client) LoadDataFile(name string) error {
 	return c.olxAPI.LoadDataFile(name, false)
+}
+
+// LoadDataFile loads *.olr file from disk. Opens read only.
+func (c *Client) LoadDataFileReadOnly(name string) error {
+	return c.olxAPI.LoadDataFile(name, true)
 }
 
 // Returns the currently loaded olr filename.
