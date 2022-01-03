@@ -7,6 +7,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"text/tabwriter"
 
 	"github.com/readpe/goolx"
 )
@@ -20,20 +22,40 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Define a 3LG bus fault config for DoFault.
-	fltCfg := goolx.NewFaultConfig(goolx.FaultCloseIn(), goolx.FaultConn(goolx.ABC), goolx.FaultClearPrev(true))
+	// Define a 3LG and 1LG bus fault config for DoFault.
+	fltCfg := goolx.NewFaultConfig(
+		goolx.FaultCloseIn(),                 // Bus Handle + Close In = bus fault
+		goolx.FaultConn(goolx.ABC, goolx.AG), // 3LG and 1LG (A-gnd)
+		goolx.FaultClearPrev(true),           // Clear previous results
+	)
 
 	// Loop through all buses in case using NextEquipment iterator.
 	for bi := api.NextEquipment(goolx.TCBus); bi.Next(); {
 		hnd := bi.Hnd()
 
-		// Run 3LG bus fault with defined fault config.
+		// Run pre-defined fault config for bus.
 		if err := api.DoFault(hnd, fltCfg); err != nil {
 			log.Println(err)
 			continue
 		}
 
-		fd := api.FaultDescription(1)
-		fmt.Println(fd)
+		// Define tabwriter for clean spacing of output (Optional).
+		tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+		defer tw.Flush()
+
+		// Loop through fault results, using iterator type wrapping Pickfault method.
+		for fi := api.NextFault(1); fi.Next(); {
+			fltIndex := fi.Index()
+			fd := api.FaultDescription(fltIndex)
+
+			// Get bus fault duty in phase quantities. HNDSC is the handle for total short circuit current.
+			ia, ib, ic, err := api.GetSCCurrentPhase(goolx.HNDSC)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Print result to stdout using tabwriter.
+			fmt.Fprintf(tw, "%q\tIa:%v\tIb:%v\tIc:%v\t\n", fd, ia, ib, ic)
+		}
 	}
 }
