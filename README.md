@@ -1,14 +1,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/readpe/goolx.svg)](https://pkg.go.dev/github.com/readpe/goolx)
 [![Go Report Card](https://goreportcard.com/badge/github.com/readpe/goolx)](https://goreportcard.com/report/github.com/readpe/goolx)
 
----
-
-**_Update 12-29-2021:_**  
-
-goolx is not under active development at this time, feel free to submit issues or pull requests, however they may not be promptly addressed.
-
----
-
 # Overview
 
 goolx is an **_unofficial_** Go wrapper around ASPEN's Oneliner API. It can be utilized to create programs which interact with Oneliner through the provided API functions. Additionally, it provides helper functions for common analysis tasks.
