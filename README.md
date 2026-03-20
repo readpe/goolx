@@ -102,6 +102,44 @@ go run .\example\readme.go
 "2. Bus Fault on:          28 ARIZONA          132. kV 1LG Type=A"  Ia:2890.36∠-81.2°  Ib:0.00∠-42.4°     Ic:0.00∠-143.8°
 ```
 
+## MCP Server (Beta/Untested)
+
+An MCP (Model Context Protocol) server is included at `cmd/mcp-server/`, allowing LLMs like Claude to interact directly with loaded Oneliner cases over stdio.
+
+### Build
+
+```bash
+GOOS=windows GOARCH=386 go build -o mcp-server.exe ./cmd/mcp-server/
+```
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `load_case` | Load an .olr file (read-only) or check current file |
+| `get_system_info` | System summary: equipment counts, base MVA |
+| `find_bus` | Look up a bus by name+kV or bus number |
+| `list_equipment` | List equipment, optionally filtered by bus |
+| `get_equipment` | Detailed data for specific equipment |
+| `run_fault` | Run fault simulation and return currents/voltages |
+| `run_stepped_event` | Run stepped event analysis with relay timeline |
+
+### Claude Desktop Configuration
+
+Add to your Claude Desktop `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "goolx": {
+      "command": "C:\\path\\to\\mcp-server.exe"
+    }
+  }
+}
+```
+
+> **Note**: This feature is beta and has not been tested against a live OlxAPI DLL. The MCP server requires the same ASPEN Oneliner license and DLL as the main library.
+
 ## Disclaimer
 This project is not endorsed or affiliated with ASPEN Inc.
 
